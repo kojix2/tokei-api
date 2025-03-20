@@ -1,0 +1,35 @@
+# Crystal関連
+/docs/
+/lib/
+/bin/
+/.shards/
+*.dwarf
+
+# 環境変数
+.env
+.env.*
+!.env.example
+
+# 一時ディレクトリとファイル
+/tmp/
+/tmp/tokei-api/
+*.tmp
+*.swp
+*.swo
+
+# ログファイル
+*.log
+
+# OSファイル
+.DS_Store
+Thumbs.db
+
+# IDEとエディタ
+/.idea/
+/.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# データベース
+*.db
+*.sqlite

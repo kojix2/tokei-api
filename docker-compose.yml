@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+    command: crystal run src/tokei-api.cr
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_PROVIDER=local
+      - DATABASE_URL=postgresql://postgres:postgres@db/tokei-api
+      - PORT=3000
+      - KEMAL_ENV=development
+      - TEMP_DIR=/tmp/tokei-api
+    volumes:
+      - .:/app
+      - /tmp/tokei-api:/tmp/tokei-api
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=tokei-api
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
