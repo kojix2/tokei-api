@@ -1,0 +1,13 @@
+name: tokei-api
+version: 0.1.0
+
+authors:
+  - kojix2 <2xijok@gmail.com>
+
+targets:
+  tokei-api:
+    main: src/tokei-api.cr
+
+crystal: '>= 1.15.1'
+
+license: MIT
