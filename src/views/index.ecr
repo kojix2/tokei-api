@@ -1,0 +1,145 @@
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">Code Line Counter</h2>
+      </div>
+      <div class="card-body">
+        <p class="lead">
+          Enter a Git repository URL to get source code statistics using <a href="https://github.com/XAMPPRocky/tokei" target="_blank">tokei</a>.
+        </p>
+        
+        <form action="/analyses" method="post">
+          <div class="mb-3">
+            <label for="repo_url" class="form-label">Repository URL</label>
+            <input type="text" class="form-control" id="repo_url" name="repo_url" placeholder="https://github.com/username/repository.git" required>
+            <div class="form-text">Example: <a href="#" class="text-decoration-none small" id="example-repo-link" onclick="fillExampleRepo(event)">https://github.com/kojix2/tokei-api</a></div>
+          </div>
+          <button type="submit" class="btn btn-primary">Analyze</button>
+        </form>
+      </div>
+    </div>
+    
+    <div class="card mt-4">
+      <div class="card-header bg-primary text-white">
+        <h3 class="mb-0">Badge Feature</h3>
+      </div>
+      <div class="card-body">
+        <p>tokei-api provides dynamic badges that you can add to your README or other documentation. These badges visually display code statistics.</p>
+        
+        <h4>Available Badges</h4>
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <ul>
+              <li><strong>Lines of Code</strong>: Total lines of code</li>
+              <li><strong>Top Language</strong>: Most used programming language</li>
+              <li><strong>Languages</strong>: Number of languages used</li>
+              <li><strong>Code to Comment</strong>: Ratio of code to comments</li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/lines?repo_url=https://github.com/kojix2/tokei-api") %>" alt="Lines of Code">
+            <img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/language?repo_url=https://github.com/kojix2/tokei-api") %>" alt="Top Language">
+            <img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/languages?repo_url=https://github.com/kojix2/tokei-api") %>" alt="Languages">
+            <img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/ratio?repo_url=https://github.com/kojix2/tokei-api") %>" alt="Code to Comment">
+          </div>
+        </div>
+        
+        <h4>How to Use Badges</h4>
+        <p>tokei-api provides badges for both GitHub repositories and any other Git repository. You can add these badges to your README or other documentation.</p>
+        
+        <h5>For GitHub Repositories</h5>
+        <p>To add badges for a GitHub repository, use the following markdown format:</p>
+        
+        <pre class="bg-light p-3"><code>[![Lines of Code](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/owner/repo/lines") %>)](<%= server_base_url %>/github/owner/repo)</code></pre>
+        
+        <p>For example, badges for this project (tokei-api):</p>
+        
+        <pre class="bg-light p-3"><code>[![Lines of Code](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/lines") %>)](<%= server_base_url %>/github/kojix2/tokei-api)
+[![Top Language](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/language") %>)](<%= server_base_url %>/github/kojix2/tokei-api)
+[![Languages](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/languages") %>)](<%= server_base_url %>/github/kojix2/tokei-api)
+[![Code to Comment](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/ratio") %>)](<%= server_base_url %>/github/kojix2/tokei-api)</code></pre>
+        
+        <h5>For Any Git Repository</h5>
+        <p>For repositories hosted on other platforms (GitLab, Bitbucket, etc.), first analyze the repository using the form above, then use the following markdown format:</p>
+        
+        <pre class="bg-light p-3"><code>[![Lines of Code](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/lines?repo_url=https://example.com/user/repo.git") %>)](https://example.com/user/repo)</code></pre>
+        
+        <p>Replace <code>https://example.com/user/repo.git</code> with your repository URL. You can use any of the badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, or <code>ratio</code>.</p>
+        
+        <div class="alert alert-info mt-3">
+          <small>
+            <strong>Note:</strong> These badges are dynamic and will automatically reflect the latest analysis of your repository.
+            For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository 
+            and want to update the badge data, you can run a new analysis after the cache period expires.
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header bg-success text-white">
+        <h3 class="mb-0">GitHub Direct Access</h3>
+      </div>
+      <div class="card-body">
+        <p>You can directly access GitHub repositories using the following format:</p>
+        
+        <pre class="bg-light p-3"><code><%= server_base_url %>/github/:owner/:repo</code></pre>
+        
+        <p>For example, to analyze the Crystal language repository:</p>
+        
+        <pre class="bg-light p-3"><code><%= server_base_url %>/github/crystal-lang/crystal</code></pre>
+        
+        <p>This allows you to access analysis results directly without having to input the repository URL.</p>
+      </div>
+    </div>
+    
+    <div class="card mt-4">
+      <div class="card-header bg-info text-white">
+        <h3 class="mb-0">API Structure</h3>
+      </div>
+      <div class="card-body">
+        <p>tokei-api provides a consistent API structure:</p>
+        
+        <h4>Core API</h4>
+        <ul>
+          <li><code>POST /api/analyses</code> - Analyze a repository</li>
+          <li><code>GET /api/analyses/:id</code> - Retrieve a specific analysis result</li>
+          <li><code>GET /api/analyses/:id/languages</code> - Get language statistics</li>
+          <li><code>GET /api/analyses/:id/badges/:type</code> - Get badge data</li>
+        </ul>
+        
+        <h4>GitHub-specific API</h4>
+        <ul>
+          <li><code>GET /api/github/:owner/:repo</code> - Analyze a GitHub repository</li>
+          <li><code>GET /api/github/:owner/:repo/languages</code> - Get language statistics for a GitHub repository</li>
+          <li><code>GET /api/github/:owner/:repo/badges/:type</code> - Get badge data for a GitHub repository</li>
+        </ul>
+        
+        <h4>Usage Examples</h4>
+        <pre class="bg-light p-3"><code>// Analyze a repository
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://github.com/crystal-lang/crystal"}' \
+  <%= server_base_url %>/api/analyses
+
+// Analyze a GitHub repository directly
+curl <%= server_base_url %>/api/github/crystal-lang/crystal</code></pre>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header bg-info text-white">
+        <h3 class="mb-0">API Usage</h3>
+      </div>
+      <div class="card-body">
+        <p>tokei-api provides a RESTful API. The following endpoints are available:</p>
+        
+        <h4>GET /api/badge/:type</h4>
+        <p>Retrieves badge data in shields.io compatible format for any Git repository.</p>
+        <pre class="bg-light p-3"><code>curl <%= server_base_url %>/api/badge/lines?repo_url=https://github.com/kojix2/tokei-api</code></pre>
+        <p>Available badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, <code>ratio</code></p>
+      </div>
+    </div>
+  </div>
+</div>

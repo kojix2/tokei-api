@@ -1,0 +1,40 @@
+services:
+  app:
+    build:
+      context: .
+    command: sh -c "shards install && /app/tokei-api"
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_PROVIDER=local
+      - DATABASE_URL=postgresql://postgres:postgres@db/tokei-api
+      - PORT=3000
+      - KEMAL_ENV=development
+      - TEMP_DIR=/tmp/tokei-api
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./spec:/app/spec
+      - ./shard.yml:/app/shard.yml
+      - ./shard.lock:/app/shard.lock
+      - ./.env:/app/.env
+      - /tmp/tokei-api:/tmp/tokei-api
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=tokei-api
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

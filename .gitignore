@@ -1,0 +1,35 @@
+# Crystal related
+/docs/
+/lib/
+/bin/
+/.shards/
+*.dwarf
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Temporary directories and files
+/tmp/
+/tmp/tokei-api/
+*.tmp
+*.swp
+*.swo
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+/.idea/
+/.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Database
+*.db
+*.sqlite

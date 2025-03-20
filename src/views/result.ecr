@@ -1,0 +1,320 @@
+<div class="row">
+  <div class="col-md-10 offset-md-1">
+    <div class="card">
+      <div class="card-header bg-success text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">Analysis Results: <%= analysis.repo_url %></h2>
+          <small><%= analysis.analyzed_at.not_nil!.to_s("%Y-%m-%d %H:%M") %></small>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header">
+                <h4>Lines of Code by Language</h4>
+              </div>
+              <div class="card-body">
+                <canvas id="languageChart" width="400" height="300"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header">
+                <h4>Code, Comments, and Blank Lines Ratio</h4>
+              </div>
+              <div class="card-body">
+                <canvas id="codeTypeChart" width="400" height="300"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="table-responsive">
+          <table id="language-stats-table" class="table table-striped table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th class="sortable" data-sort="string">Language <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="number">Files <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="number">Code <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="number">Comments <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="number">Blanks <span class="sort-icon">↕</span></th>
+                <th class="sortable" data-sort="number">Total <span class="sort-icon">↕</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% total_files = 0 %>
+              <% total_code = 0 %>
+              <% total_comments = 0 %>
+              <% total_blanks = 0 %>
+              
+              <% result_json.as_h.each do |language, stats| %>
+                <% next if language == "Total" %>
+                <% stats_obj = stats.as_h %>
+                <% files = stats_obj["reports"]?.try(&.as_a.size) || stats_obj["files"]?.try(&.as_i) || 0 %>
+                <% code = stats_obj["code"]?.try(&.as_i) || 0 %>
+                <% comments = stats_obj["comments"]?.try(&.as_i) || 0 %>
+                <% blanks = stats_obj["blanks"]?.try(&.as_i) || 0 %>
+                
+                <% total_files += files %>
+                <% total_code += code %>
+                <% total_comments += comments %>
+                <% total_blanks += blanks %>
+                
+                <tr>
+                  <td><strong><%= language %></strong></td>
+                  <td><%= files %></td>
+                  <td><%= code %></td>
+                  <td><%= comments %></td>
+                  <td><%= blanks %></td>
+                  <td><%= code + comments + blanks %></td>
+                </tr>
+              <% end %>
+            </tbody>
+            <tfoot class="table-dark">
+              <tr>
+                <th>Total</th>
+                <th><%= total_files %></th>
+                <th><%= total_code %></th>
+                <th><%= total_comments %></th>
+                <th><%= total_blanks %></th>
+                <th><%= total_code + total_comments + total_blanks %></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="card mt-4">
+          <div class="card-header">
+            <h4>README Badges</h4>
+          </div>
+          <div class="card-body">
+            <p>Add these badges to your README.md to showcase your code statistics:</p>
+            
+            <% 
+              # Calculate values for badges
+              total_lines = total_code + total_comments + total_blanks
+              
+              # Format numbers for display (e.g., 1.2k for 1200)
+              format_number = ->(num : Int32) {
+                if num >= 1_000_000
+                  "%.1fM" % (num / 1_000_000.0)
+                elsif num >= 1_000
+                  "%.1fk" % (num / 1_000.0)
+                else
+                  num.to_s
+                end
+              }
+              
+              # Get top language
+              top_language = ""
+              top_language_lines = 0
+              result_json.as_h.each do |language, stats|
+                next if language == "Total"
+                stats_obj = stats.as_h
+                code = stats_obj["code"]?.try(&.as_i) || 0
+                if code > top_language_lines
+                  top_language = language
+                  top_language_lines = code
+                end
+              end
+              
+              # Count languages
+              language_count = 0
+              result_json.as_h.each do |language, _|
+                next if language == "Total"
+                language_count += 1
+              end
+              
+              # Calculate code to comment ratio
+              code_comment_ratio = total_comments > 0 ? (total_code.to_f / total_comments).round(1) : 0
+              
+              # Get base URL from environment or server configuration
+              base_url = server_base_url
+              
+              # Dynamic badge URLs using shields.io endpoint
+              total_lines_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/lines?repo_url=#{analysis.repo_url}")}"
+              top_language_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/language?repo_url=#{analysis.repo_url}")}"
+              language_count_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/languages?repo_url=#{analysis.repo_url}")}"
+              code_comment_ratio_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/ratio?repo_url=#{analysis.repo_url}")}"
+              
+              # Markdown for badges
+              total_lines_md = "[![Lines of Code](#{total_lines_badge})](#{base_url}/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)})"
+              top_language_md = "[![Top Language](#{top_language_badge})](#{base_url}/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)})"
+              language_count_md = "[![Languages](#{language_count_badge})](#{base_url}/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)})"
+              code_comment_ratio_md = "[![Code to Comment](#{code_comment_ratio_badge})](#{base_url}/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)})"
+            %>
+            
+            <!-- Total Lines Badge -->
+            <div class="row mb-3 align-items-center">
+              <div class="col-md-6">
+                <a href="<%= "/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                  <img src="<%= total_lines_badge %>" alt="Lines of Code">
+                </a>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group">
+                  <input type="text" class="form-control" value="<%= total_lines_md %>" readonly>
+                  <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('<%= total_lines_md %>', this)">
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Top Language Badge -->
+            <div class="row mb-3 align-items-center">
+              <div class="col-md-6">
+                <a href="<%= "/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                  <img src="<%= top_language_badge %>" alt="Top Language">
+                </a>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group">
+                  <input type="text" class="form-control" value="<%= top_language_md %>" readonly>
+                  <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('<%= top_language_md %>', this)">
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Language Count Badge -->
+            <div class="row mb-3 align-items-center">
+              <div class="col-md-6">
+                <a href="<%= "/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                  <img src="<%= language_count_badge %>" alt="Languages">
+                </a>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group">
+                  <input type="text" class="form-control" value="<%= language_count_md %>" readonly>
+                  <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('<%= language_count_md %>', this)">
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Code to Comment Ratio Badge -->
+            <div class="row mb-3 align-items-center">
+              <div class="col-md-6">
+                <a href="<%= "/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                  <img src="<%= code_comment_ratio_badge %>" alt="Code to Comment Ratio">
+                </a>
+              </div>
+              <div class="col-md-6">
+                <div class="input-group">
+                  <input type="text" class="form-control" value="<%= code_comment_ratio_md %>" readonly>
+                  <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('<%= code_comment_ratio_md %>', this)">
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+              <small>
+                <strong>Note:</strong> These badges are dynamic and will automatically reflect the latest analysis of your repository.
+                For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository 
+                and want to update the badge data, you can run a new analysis after the cache period expires.
+              </small>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <a href="/" class="btn btn-primary">Back to Home</a>
+          <a href="/api/analysis/<%= analysis.id %>" class="btn btn-info" target="_blank">View as JSON</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Chart for lines of code by language
+  const languageData = {};
+  const resultJson = <%= analysis.result.to_json %>;
+  
+  // データの準備
+  Object.entries(resultJson).forEach(([language, stats]) => {
+    if (language !== 'Total') {
+      languageData[language] = stats.code || 0;
+    }
+  });
+  
+  // Extract top 10 languages (by lines of code)
+  const topLanguages = Object.entries(languageData)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  
+  // Separate language names and line counts
+  const languageNames = topLanguages.map(item => item[0]);
+  const codeCounts = topLanguages.map(item => item[1]);
+  
+  // Generate random colors
+  const generateColors = (count) => {
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+      const hue = (i * 360 / count) % 360;
+      colors.push(`hsl(${hue}, 70%, 60%)`);
+    }
+    return colors;
+  };
+  
+  // Language chart
+  const languageCtx = document.getElementById('languageChart').getContext('2d');
+  new Chart(languageCtx, {
+    type: 'bar',
+    data: {
+      labels: languageNames,
+      datasets: [{
+        label: 'Lines of Code',
+        data: codeCounts,
+        backgroundColor: generateColors(languageNames.length),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      scales: {
+        x: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  
+  // Code, comments, and blank lines ratio chart
+  let totalCode = 0;
+  let totalComments = 0;
+  let totalBlanks = 0;
+  
+  Object.values(resultJson).forEach(stats => {
+    if (typeof stats === 'object') {
+      totalCode += stats.code || 0;
+      totalComments += stats.comments || 0;
+      totalBlanks += stats.blanks || 0;
+    }
+  });
+  
+  const codeTypeCtx = document.getElementById('codeTypeChart').getContext('2d');
+  new Chart(codeTypeCtx, {
+    type: 'pie',
+    data: {
+      labels: ['Code', 'Comments', 'Blanks'],
+      datasets: [{
+        data: [totalCode, totalComments, totalBlanks],
+        backgroundColor: ['#4CAF50', '#2196F3', '#FFC107'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true
+    }
+  });
+});
+</script>
