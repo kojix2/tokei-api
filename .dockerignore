@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+.editorconfig
+spec/
+README.md
+LICENSE

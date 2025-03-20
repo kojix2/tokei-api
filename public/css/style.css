@@ -1,0 +1,120 @@
+/* 全体のスタイル */
+body {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f8f9fa;
+  padding-bottom: 60px; /* フッター用の余白 */
+}
+
+/* ヘッダー */
+.navbar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+/* カード */
+.card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: none;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  font-weight: bold;
+}
+
+/* フォーム */
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* ボタン */
+.btn {
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: #007bff;
+}
+
+.btn-primary:hover {
+  background-color: #0069d9;
+}
+
+/* テーブル */
+.table {
+  background-color: white;
+}
+
+.table th {
+  font-weight: bold;
+}
+
+/* コードブロック */
+pre {
+  border-radius: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9rem;
+}
+
+/* フッター */
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  z-index: 1000;
+}
+
+/* グラフ */
+canvas {
+  max-width: 100%;
+}
+
+/* レスポンシブ調整 */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.3rem;
+  }
+  
+  h4 {
+    font-size: 1.1rem;
+  }
+}
+
+/* アニメーション */
+.card, .btn {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* JSON表示 */
+#jsonResult {
+  white-space: pre-wrap;
+  word-break: break-all;
+}

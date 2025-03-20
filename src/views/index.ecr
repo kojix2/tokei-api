@@ -1,0 +1,64 @@
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">ソースコード解析</h2>
+      </div>
+      <div class="card-body">
+        <p class="lead">
+          GitリポジトリのURLを入力して、<a href="https://github.com/XAMPPRocky/tokei" target="_blank">tokei</a>を使用してソースコードの統計情報を取得します。
+        </p>
+        
+        <form action="/analyze" method="post">
+          <div class="mb-3">
+            <label for="repo_url" class="form-label">リポジトリURL</label>
+            <input type="text" class="form-control" id="repo_url" name="repo_url" placeholder="https://github.com/username/repository.git" required>
+            <div class="form-text">例: https://github.com/crystal-lang/crystal.git</div>
+          </div>
+          <button type="submit" class="btn btn-primary">解析</button>
+        </form>
+      </div>
+    </div>
+    
+    <% if recent_analyses && !recent_analyses.empty? %>
+      <div class="card mt-4">
+        <div class="card-header bg-secondary text-white">
+          <h3 class="mb-0">最近の解析</h3>
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            <% recent_analyses.each do |analysis| %>
+              <a href="/result/<%= analysis.id %>" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                  <h5 class="mb-1"><%= analysis.repo_url %></h5>
+                  <small><%= analysis.analyzed_at.not_nil!.to_s("%Y-%m-%d %H:%M") %></small>
+                </div>
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    
+    <div class="card mt-4">
+      <div class="card-header bg-info text-white">
+        <h3 class="mb-0">API使用方法</h3>
+      </div>
+      <div class="card-body">
+        <p>tokei-apiは、RESTful APIを提供しています。以下のエンドポイントが利用可能です：</p>
+        
+        <h4>POST /analyze</h4>
+        <p>リポジトリを解析して結果を返します。</p>
+        <pre class="bg-light p-3"><code>curl -X POST -H "Content-Type: application/json" -d '{"repo_url":"https://github.com/crystal-lang/crystal.git"}' http://localhost:3000/analyze</code></pre>
+        
+        <h4>GET /api/recent</h4>
+        <p>最近の解析結果を取得します。</p>
+        <pre class="bg-light p-3"><code>curl http://localhost:3000/api/recent</code></pre>
+        
+        <h4>GET /api/analysis/:id</h4>
+        <p>特定の解析結果を取得します。</p>
+        <pre class="bg-light p-3"><code>curl http://localhost:3000/api/analysis/[analysis-id]</code></pre>
+      </div>
+    </div>
+  </div>
+</div>

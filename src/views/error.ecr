@@ -1,0 +1,31 @@
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card">
+      <div class="card-header bg-danger text-white">
+        <h2 class="mb-0">エラーが発生しました</h2>
+      </div>
+      <div class="card-body">
+        <% if error_message && !error_message.empty? %>
+          <div class="alert alert-danger">
+            <p><strong>エラー詳細:</strong> <%= error_message %></p>
+          </div>
+        <% else %>
+          <div class="alert alert-warning">
+            <p>ページが見つかりませんでした。</p>
+          </div>
+        <% end %>
+        
+        <p>以下のいずれかの理由でエラーが発生した可能性があります：</p>
+        <ul>
+          <li>URLが間違っている</li>
+          <li>リクエストされたリソースが削除された</li>
+          <li>サーバー内部でエラーが発生した</li>
+        </ul>
+        
+        <div class="mt-4">
+          <a href="/" class="btn btn-primary">トップページに戻る</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
