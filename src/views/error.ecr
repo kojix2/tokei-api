@@ -1,0 +1,31 @@
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card">
+      <div class="card-header bg-danger text-white">
+        <h2 class="mb-0">An Error Occurred</h2>
+      </div>
+      <div class="card-body">
+        <% if error_message.to_s.presence %>
+          <div class="alert alert-danger">
+            <p><strong>Error Details:</strong> <%= error_message %></p>
+          </div>
+        <% else %>
+          <div class="alert alert-warning">
+            <p>Page not found.</p>
+          </div>
+        <% end %>
+        
+        <p>The error may have occurred for one of the following reasons:</p>
+        <ul>
+          <li>Incorrect URL</li>
+          <li>The requested resource has been removed</li>
+          <li>An internal server error occurred</li>
+        </ul>
+        
+        <div class="mt-4">
+          <a href="/" class="btn btn-primary">Back to Home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

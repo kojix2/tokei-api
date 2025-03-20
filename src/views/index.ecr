@@ -1,0 +1,43 @@
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">Code Line Counter</h2>
+      </div>
+      <div class="card-body">
+        <p class="lead">
+          Enter a Git repository URL to get source code statistics using <a href="https://github.com/XAMPPRocky/tokei" target="_blank">tokei</a>.
+        </p>
+        
+        <form action="/analyze" method="post">
+          <div class="mb-3">
+            <label for="repo_url" class="form-label">Repository URL</label>
+            <input type="text" class="form-control" id="repo_url" name="repo_url" placeholder="https://github.com/username/repository.git" required>
+            <div class="form-text">Example: https://github.com/crystal-lang/crystal.git</div>
+          </div>
+          <button type="submit" class="btn btn-primary">Analyze</button>
+        </form>
+      </div>
+    </div>
+    
+    <div class="card mt-4">
+      <div class="card-header bg-info text-white">
+        <h3 class="mb-0">API Usage</h3>
+      </div>
+      <div class="card-body">
+        <p>tokei-api provides a RESTful API. The following endpoints are available:</p>
+        
+        <h4>POST /analyze</h4>
+        <p>Analyzes a repository and returns the results.</p>
+        <pre class="bg-light p-3"><code>curl -X POST \
+        -H "Content-Type: application/json" \
+        -d '{"repo_url":"https://github.com/crystal-lang/crystal.git"}' \
+        <%= server_base_url %>/api/analyze</code></pre>
+        
+        <h4>GET /api/analysis/:id</h4>
+        <p>Retrieves a specific analysis result.</p>
+        <pre class="bg-light p-3"><code>curl <%= server_base_url %>/api/analysis/[analysis-id]</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
