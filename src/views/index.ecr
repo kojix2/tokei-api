@@ -124,8 +124,8 @@ curl -X POST \
   -d '{"url":"https://github.com/kojix2/tokei-api"}' \
   <%= server_base_url %>/api/analyses
 
-// Analyze a GitHub repository directly
-curl <%= server_base_url %>/api/github/kojix2/tokei-api
+// Retrieve cached analysis result
+curl "https://tokei.kojix2.net/api/analyses?url=https://github.com/kojix2/tokei-api"
 
 // Analyze a GitHub repository directly
 curl https://tokei.kojix2.net/api/github/kojix2/tokei-api</code></pre>
