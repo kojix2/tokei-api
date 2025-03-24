@@ -94,56 +94,51 @@
       </div>
     </div>
     
-    <div class="card mt-4">
-      <div class="card-header bg-info text-white">
-        <h3 class="mb-0">API Structure</h3>
-      </div>
-      <div class="card-body">
-        <p>tokei-api provides a consistent API structure:</p>
-        
-        <h4>Core API</h4>
-        <ul>
-          <li><code>POST /api/analyses</code> - Analyze a repository</li>
-          <li><code>GET /api/analyses?url=...</code> - Retrieve cached analysis result by repository URL</li>
-          <li><code>GET /api/analyses/:id</code> - Retrieve a specific analysis result</li>
-          <li><code>GET /api/analyses/:id/languages</code> - Get language statistics</li>
-          <li><code>GET /api/analyses/:id/badges/:type</code> - Get badge data</li>
-        </ul>
-        
-        <h4>GitHub-specific API</h4>
-        <ul>
-          <li><code>GET /api/github/:owner/:repo</code> - Analyze a GitHub repository</li>
-          <li><code>GET /api/github/:owner/:repo/languages</code> - Get language statistics for a GitHub repository</li>
-          <li><code>GET /api/github/:owner/:repo/badges/:type</code> - Get badge data for a GitHub repository</li>
-        </ul>
-        
-        <h4>Usage Examples</h4>
-        <pre class="bg-light p-3"><code>// Analyze a repository
+		<div class="card mt-4">
+		  <div class="card-header bg-info text-white">
+		    <h3 class="mb-0">API Documentation</h3>
+		  </div>
+		  <div class="card-body">
+		    <p>tokei-api provides a consistent RESTful API. The following endpoints are available:</p>
+		    
+		    <h4>Core API</h4>
+		    <ul>
+		      <li><code>POST /api/analyses</code> - Analyze a repository</li>
+		      <li><code>GET /api/analyses?url=...</code> - Retrieve cached analysis result by repository URL</li>
+		      <li><code>GET /api/analyses/:id</code> - Retrieve a specific analysis result</li>
+		      <li><code>GET /api/analyses/:id/languages</code> - Get language statistics</li>
+		      <li><code>GET /api/analyses/:id/badges/:type</code> - Get badge data</li>
+		      <li>
+		        <code>GET /api/badge/:type?url=...</code> - Retrieves badge data in Shields.io compatible format for the specified repository.
+		        Available badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, <code>ratio</code>.
+		      </li>
+		    </ul>
+		    
+		    <h4>GitHub-specific API</h4>
+		    <ul>
+		      <li><code>GET /api/github/:owner/:repo</code> - Analyze a GitHub repository</li>
+		      <li><code>GET /api/github/:owner/:repo/languages</code> - Get language statistics for a GitHub repository</li>
+		      <li><code>GET /api/github/:owner/:repo/badges/:type</code> - Get badge data for a GitHub repository</li>
+		    </ul>
+		    
+		    <h4>Usage Examples</h4>
+		    <pre class="bg-light p-3"><code>
+// Analyze a repository
 curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"url":"https://github.com/kojix2/tokei-api"}' \
-  <%= server_base_url %>/api/analyses
+  https://tokei.kojix2.net/api/analyses
 
 // Retrieve cached analysis result
 curl "https://tokei.kojix2.net/api/analyses?url=https://github.com/kojix2/tokei-api"
 
 // Analyze a GitHub repository directly
-curl https://tokei.kojix2.net/api/github/kojix2/tokei-api</code></pre>
-      </div>
-    </div>
+curl https://tokei.kojix2.net/api/github/kojix2/tokei-api
 
-    <div class="card mt-4">
-      <div class="card-header bg-info text-white">
-        <h3 class="mb-0">API Usage</h3>
-      </div>
-      <div class="card-body">
-        <p>tokei-api provides a RESTful API. The following endpoints are available:</p>
-        
-        <h4>GET /api/badge/:type</h4>
-        <p>Retrieves badge data in shields.io compatible format for any Git repository.</p>
-        <pre class="bg-light p-3"><code>curl <%= server_base_url %>/api/badge/lines?url=https://github.com/kojix2/tokei-api</code></pre>
-        <p>Available badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, <code>ratio</code></p>
+// Retrieve badge data for any Git repository
+curl "https://tokei.kojix2.net/api/badge/lines?url=https://github.com/kojix2/tokei-api"
+		    </code></pre>
       </div>
     </div>
-  </div>
+	</div>
 </div>
