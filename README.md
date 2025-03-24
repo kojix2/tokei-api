@@ -17,7 +17,7 @@ tokei-api is a web application that provides an API to retrieve source code from
 
   ```json
   {
-    "url": "https://github.com/crystal-lang/crystal.git"
+    "url": "https://github.com/kojix2/tokei-api.git"
   }
   ```
 
@@ -101,16 +101,16 @@ Available badge types: `lines`, `language`, `languages`, `ratio`
 
 ```bash
 # Analyze a repository
-curl -X POST -H "Content-Type: application/json" -d '{"url":"https://github.com/crystal-lang/crystal.git"}' http://localhost:3000/api/analyses
+curl -X POST -H "Content-Type: application/json" -d '{"url":"https://github.com/kojix2/tokei-api.git"}' http://localhost:3000/api/analyses
 
 # Analyze a GitHub repository directly
-curl http://localhost:3000/api/github/crystal-lang/crystal
+curl http://localhost:3000/api/github/kojix2/tokei-api
 
 # Retrieve language statistics
-curl http://localhost:3000/api/github/crystal-lang/crystal/languages
+curl http://localhost:3000/api/github/kojix2/tokei-api/languages
 
 # Get badge data
-curl http://localhost:3000/badge/github/crystal-lang/crystal/lines
+curl http://localhost:3000/badge/github/kojix2/tokei-api/lines
 ```
 
 ### Badge Integration
@@ -136,7 +136,7 @@ For GitHub repositories, you can use the direct access URL format:
 http://localhost:3000/github/owner/repo
 ```
 
-For example: http://localhost:3000/github/crystal-lang/crystal
+For example: http://localhost:3000/github/kojix2/tokei-api
 
 ## Development
 

@@ -203,6 +203,68 @@ module Tokei::Api::Controllers
         end
       end
 
+      # GET /api/analyses endpoint (retrieve analysis result by repository URL)
+      get "/api/analyses" do |env|
+        begin
+          # Get repository URL from query parameter
+          repo_url = env.params.query["url"]
+
+          # Return error if URL is not provided
+          if repo_url.nil? || repo_url.empty?
+            env.response.status_code = 400
+            next {error: {code: "invalid_request", message: "Missing required query parameter: url", status: 400}}.to_json
+          end
+
+          # Validate repository URL
+          unless Tokei::Api::Services::TokeiService.valid_repo_url?(repo_url)
+            env.response.status_code = 400
+            next {error: {code: "invalid_request", message: "Invalid repository URL", status: 400}}.to_json
+          end
+
+          # Find existing analysis results for the repository
+          existing_analyses = Tokei::Api::Models::Analysis.find_by_repo_url(repo_url)
+
+          # Return 404 if no analysis is found
+          if existing_analyses.empty?
+            env.response.status_code = 404
+            next {error: {code: "not_found", message: "No analysis found for the given URL", status: 404}}.to_json
+          end
+
+          # Use the most recent analysis (first element in the array)
+          analysis = existing_analyses[0]
+
+          # Prepare response data
+          response_data = {
+            data: {
+              id:          analysis.id.to_s,
+              url:         analysis.repo_url,
+              analyzed_at: analysis.analyzed_at,
+              status:      "completed",
+              summary:     {
+                total_lines:        analysis.total_lines,
+                total_code:         analysis.total_code,
+                total_comments:     analysis.total_comments,
+                total_blanks:       analysis.total_blanks,
+                languages_count:    analysis.language_count,
+                top_language:       analysis.top_language,
+                code_comment_ratio: analysis.code_comment_ratio,
+              },
+              links: {
+                self:      "/api/analyses/#{analysis.id.to_s}",
+                languages: "/api/analyses/#{analysis.id.to_s}/languages",
+                web:       "/analyses/#{analysis.id.to_s}",
+              },
+            },
+          }
+
+          env.response.content_type = "application/json"
+          response_data.to_json
+        rescue ex
+          env.response.status_code = 500
+          {error: {code: "server_error", message: "Internal server error: #{ex.message}", status: 500}}.to_json
+        end
+      end
+
       # GET /api/analyses/:id endpoint (retrieve specific analysis results)
       get "/api/analyses/:id" do |env|
         begin

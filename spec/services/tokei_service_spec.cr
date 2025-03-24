@@ -5,13 +5,13 @@ describe Tokei::Api::Services::TokeiService do
   describe ".valid_repo_url?" do
     it "validates GitHub HTTPS URLs" do
       # Basic GitHub HTTPS URL
-      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/crystal-lang/crystal.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/crystal-lang/crystal").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/kojix2/tokei-api.git").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/kojix2/tokei-api").should be_true
 
       # URL with special characters in username or repository name
-      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/crystal-lang/crystal-db.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/crystal-lang/crystal_db.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/crystal-lang/crystal.db.git").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/kojix2/tokei-api-db.git").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/kojix2/tokei-api_db.git").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/kojix2/tokei-api.db.git").should be_true
 
       # Invalid GitHub URL
       Tokei::Api::Services::TokeiService.valid_repo_url?("https://github.com/crystal-lang").should be_false
@@ -21,13 +21,13 @@ describe Tokei::Api::Services::TokeiService do
 
     it "validates GitHub SSH URLs" do
       # Basic GitHub SSH URL
-      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:crystal-lang/crystal.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:crystal-lang/crystal").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:kojix2/tokei-api.git").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:kojix2/tokei-api").should be_true
 
       # URL with special characters in username or repository name
-      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:crystal-lang/crystal-db.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:crystal-lang/crystal_db.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:crystal-lang/crystal.db.git").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:kojix2/tokei-api-db.git").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:kojix2/tokei-api_db.git").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:kojix2/tokei-api.db.git").should be_true
 
       # Invalid GitHub SSH URL
       Tokei::Api::Services::TokeiService.valid_repo_url?("git@github.com:crystal-lang").should be_false
@@ -70,8 +70,8 @@ describe Tokei::Api::Services::TokeiService do
       Tokei::Api::Services::TokeiService.valid_repo_url?("").should be_false
 
       # Invalid protocol
-      Tokei::Api::Services::TokeiService.valid_repo_url?("http://github.com/crystal-lang/crystal.git").should be_false
-      Tokei::Api::Services::TokeiService.valid_repo_url?("ftp://github.com/crystal-lang/crystal.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("http://github.com/kojix2/tokei-api.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("ftp://github.com/kojix2/tokei-api.git").should be_false
     end
   end
 end

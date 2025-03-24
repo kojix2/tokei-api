@@ -88,7 +88,7 @@
         
         <p>For example, to analyze the Crystal language repository:</p>
         
-        <pre class="bg-light p-3"><code><%= server_base_url %>/github/crystal-lang/crystal</code></pre>
+        <pre class="bg-light p-3"><code><%= server_base_url %>/github/kojix2/tokei-api</code></pre>
         
         <p>This allows you to access analysis results directly without having to input the repository URL.</p>
       </div>
@@ -104,6 +104,7 @@
         <h4>Core API</h4>
         <ul>
           <li><code>POST /api/analyses</code> - Analyze a repository</li>
+          <li><code>GET /api/analyses?url=...</code> - Retrieve cached analysis result by repository URL</li>
           <li><code>GET /api/analyses/:id</code> - Retrieve a specific analysis result</li>
           <li><code>GET /api/analyses/:id/languages</code> - Get language statistics</li>
           <li><code>GET /api/analyses/:id/badges/:type</code> - Get badge data</li>
@@ -120,11 +121,14 @@
         <pre class="bg-light p-3"><code>// Analyze a repository
 curl -X POST \
   -H "Content-Type: application/json" \
-  -d '{"url":"https://github.com/crystal-lang/crystal"}' \
+  -d '{"url":"https://github.com/kojix2/tokei-api"}' \
   <%= server_base_url %>/api/analyses
 
 // Analyze a GitHub repository directly
-curl <%= server_base_url %>/api/github/crystal-lang/crystal</code></pre>
+curl <%= server_base_url %>/api/github/kojix2/tokei-api
+
+// Analyze a GitHub repository directly
+curl https://tokei.kojix2.net/api/github/kojix2/tokei-api</code></pre>
       </div>
     </div>
 
