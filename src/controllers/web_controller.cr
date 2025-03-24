@@ -57,21 +57,21 @@ module Tokei::Api::Controllers
       # GET /analyze endpoint (for badge links) - redirect to /analyses
       get "/analyze" do |env|
         # Get repository URL from query parameters
-        repo_url = env.params.query["repo_url"]
+        repo_url = env.params.query["url"]
         process_analyze_request(env, repo_url)
       end
 
       # POST /analyze endpoint (form submission) - redirect to /analyses
       post "/analyze" do |env|
         # Get repository URL from form
-        repo_url = env.params.body["repo_url"]
+        repo_url = env.params.body["url"]
         process_analyze_request(env, repo_url)
       end
 
       # POST /analyses endpoint (form submission - new API structure)
       post "/analyses" do |env|
         # Get repository URL from form
-        repo_url = env.params.body["repo_url"]
+        repo_url = env.params.body["url"]
         process_analyze_request(env, repo_url)
       end
 

@@ -37,9 +37,7 @@ tokei-api is a web application that provides an API to retrieve source code from
 
 Available badge types: `lines`, `language`, `languages`, `ratio`
 
-#### Legacy API (for backward compatibility)
-
-- `GET /api/badge/:type?repo_url=...` - Retrieves badge data in shields.io compatible format for any Git repository
+- `GET /api/badge/:type?url=...` - Retrieves badge data in shields.io compatible format for any Git repository
 
 ### Web Interface
 

@@ -91,7 +91,7 @@ module Tokei::Api::Controllers
         begin
           # Get badge type and repository URL
           badge_type = env.params.url["type"]
-          repo_url = env.params.query["repo_url"]
+          repo_url = env.params.query["url"]
 
           # URL validation
           unless Tokei::Api::Services::TokeiService.valid_repo_url?(repo_url)
@@ -154,11 +154,10 @@ module Tokei::Api::Controllers
           request_body = env.request.body.not_nil!.gets_to_end
           request_json = JSON.parse(request_body)
 
-          # Support both "url" and "repo_url" for backward compatibility
-          repo_url = request_json["url"]?.try(&.as_s) || request_json["repo_url"]?.try(&.as_s) || ""
+          repo_url = request_json["url"]?.try(&.as_s) || ""
 
           if repo_url.empty?
-            raise KeyError.new("Missing required field: url or repo_url")
+            raise KeyError.new("Missing required field: url")
           end
 
           # Get analysis

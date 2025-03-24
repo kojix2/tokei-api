@@ -133,22 +133,22 @@
               base_url = server_base_url
               
               # Dynamic badge URLs using shields.io endpoint
-              total_lines_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/lines?repo_url=#{analysis.repo_url}")}"
-              top_language_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/language?repo_url=#{analysis.repo_url}")}"
-              language_count_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/languages?repo_url=#{analysis.repo_url}")}"
-              code_comment_ratio_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/ratio?repo_url=#{analysis.repo_url}")}"
+              total_lines_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/lines?url=#{analysis.repo_url}")}"
+              top_language_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/language?url=#{analysis.repo_url}")}"
+              language_count_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/languages?url=#{analysis.repo_url}")}"
+              code_comment_ratio_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/ratio?url=#{analysis.repo_url}")}"
               
               # Markdown for badges
-              total_lines_md = "[![Lines of Code](#{total_lines_badge})](#{base_url}/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)})"
-              top_language_md = "[![Top Language](#{top_language_badge})](#{base_url}/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)})"
-              language_count_md = "[![Languages](#{language_count_badge})](#{base_url}/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)})"
-              code_comment_ratio_md = "[![Code to Comment](#{code_comment_ratio_badge})](#{base_url}/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)})"
+              total_lines_md = "[![Lines of Code](#{total_lines_badge})](#{base_url}/analyze?url=#{URI.encode_www_form(analysis.repo_url)})"
+              top_language_md = "[![Top Language](#{top_language_badge})](#{base_url}/analyze?url=#{URI.encode_www_form(analysis.repo_url)})"
+              language_count_md = "[![Languages](#{language_count_badge})](#{base_url}/analyze?url=#{URI.encode_www_form(analysis.repo_url)})"
+              code_comment_ratio_md = "[![Code to Comment](#{code_comment_ratio_badge})](#{base_url}/analyze?url=#{URI.encode_www_form(analysis.repo_url)})"
             %>
             
             <!-- Total Lines Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= "/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                <a href="<%= "/analyze?url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
                   <img src="<%= total_lines_badge %>" alt="Lines of Code">
                 </a>
               </div>
@@ -165,7 +165,7 @@
             <!-- Top Language Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= "/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                <a href="<%= "/analyze?url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
                   <img src="<%= top_language_badge %>" alt="Top Language">
                 </a>
               </div>
@@ -182,7 +182,7 @@
             <!-- Language Count Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= "/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                <a href="<%= "/analyze?url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
                   <img src="<%= language_count_badge %>" alt="Languages">
                 </a>
               </div>
@@ -199,7 +199,7 @@
             <!-- Code to Comment Ratio Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= "/analyze?repo_url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                <a href="<%= "/analyze?url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
                   <img src="<%= code_comment_ratio_badge %>" alt="Code to Comment Ratio">
                 </a>
               </div>
