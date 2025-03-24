@@ -21,6 +21,7 @@ tokei-api is a web application that provides an API to retrieve source code from
   }
   ```
 
+- `GET /api/analyses?url=...` - Retrieve cached analysis result by repository URL
 - `GET /api/analyses/:id` - Retrieves a specific analysis result with detailed information
 - `GET /api/analyses/:id/languages` - Retrieves language statistics for a specific analysis
 - `GET /api/analyses/:id/badges/:type` - Retrieves badge data for a specific analysis
