@@ -39,7 +39,7 @@ document.head.insertAdjacentHTML('beforeend', `
 
 document.addEventListener("DOMContentLoaded", function () {
   // Form submission handling
-  const repoForm = document.querySelector('form[action="/analyze"]');
+  const repoForm = document.querySelector('form[action="/analyses"]');
   if (repoForm) {
     repoForm.addEventListener("submit", function (e) {
       const repoUrl = document.getElementById("repo_url").value.trim();
