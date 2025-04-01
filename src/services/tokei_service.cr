@@ -15,28 +15,49 @@ module Tokei::Api::Services
     # Timeout for git clone operation (in seconds)
     CLONE_TIMEOUT = ENV["CLONE_TIMEOUT_SECONDS"]?.try(&.to_i) || 30
 
+    # Common URL patterns
+    # GitHub URL patterns
+    GITHUB_HTTPS_VALIDATION = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    GITHUB_SSH_VALIDATION = /^git@github\.com:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+
+    # GitHub URL patterns with capture groups for owner and repo
+    GITHUB_HTTPS_EXTRACTION = /https?:\/\/(?:www\.)?github\.com\/([^\/]+)\/([^\/\.]+)(?:\.git)?/
+    GITHUB_SSH_EXTRACTION = /git@github\.com:([^\/]+)\/([^\/\.]+)(?:\.git)?/
+
+    # GitLab URL patterns
+    GITLAB_HTTPS = /^https:\/\/gitlab\.com\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    GITLAB_SSH = /^git@gitlab\.com:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+
+    # Bitbucket URL patterns
+    BITBUCKET_HTTPS = /^https:\/\/bitbucket\.org\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    BITBUCKET_SSH = /^git@bitbucket\.org:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+
+    # Generic git URL patterns
+    GENERIC_HTTPS = /^https:\/\/[\w.-]+\.[\w.-]+\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    GENERIC_SSH = /^git@[\w.-]+\.[\w.-]+:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+
     # Repository URL validation
     def self.valid_repo_url?(url : String) : Bool
-      # GitHub HTTPS or SSH URL patterns
-      github_https = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-      github_ssh = /^git@github\.com:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+      !!(url.match(GITHUB_HTTPS_VALIDATION) || url.match(GITHUB_SSH_VALIDATION) ||
+        url.match(GITLAB_HTTPS) || url.match(GITLAB_SSH) ||
+        url.match(BITBUCKET_HTTPS) || url.match(BITBUCKET_SSH) ||
+        url.match(GENERIC_HTTPS) || url.match(GENERIC_SSH))
+    end
 
-      # GitLab HTTPS or SSH URL patterns
-      gitlab_https = /^https:\/\/gitlab\.com\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-      gitlab_ssh = /^git@gitlab\.com:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    # Check if the repository URL is from GitHub
+    def self.is_github_repo?(url : String) : Bool
+      !!(url.match(GITHUB_HTTPS_EXTRACTION) || url.match(GITHUB_SSH_EXTRACTION))
+    end
 
-      # Bitbucket HTTPS or SSH URL patterns
-      bitbucket_https = /^https:\/\/bitbucket\.org\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-      bitbucket_ssh = /^git@bitbucket\.org:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    # Extract owner and repo from GitHub URL
+    def self.extract_github_info(url : String) : {String, String}?
+      if match = url.match(GITHUB_HTTPS_EXTRACTION)
+        return {match[1], match[2]}
+      elsif match = url.match(GITHUB_SSH_EXTRACTION)
+        return {match[1], match[2]}
+      end
 
-      # Generic git URL patterns
-      generic_https = /^https:\/\/[\w.-]+\.[\w.-]+\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-      generic_ssh = /^git@[\w.-]+\.[\w.-]+:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-
-      !!(url.match(github_https) || url.match(github_ssh) ||
-        url.match(gitlab_https) || url.match(gitlab_ssh) ||
-        url.match(bitbucket_https) || url.match(bitbucket_ssh) ||
-        url.match(generic_https) || url.match(generic_ssh))
+      nil
     end
 
     # Analyze repository

@@ -91,7 +91,7 @@
           <div class="card-body">
             <p>Add these badges to your README.md to showcase your code statistics:</p>
             
-            <% 
+            <%
               # Calculate values for badges
               total_lines = total_code + total_comments + total_blanks
               
@@ -106,50 +106,32 @@
                 end
               }
               
-              # Get top language
-              top_language = ""
-              top_language_lines = 0
-              result_json.as_h.each do |language, stats|
-                next if language == "Total"
-                stats_obj = stats.as_h
-                code = stats_obj["code"]?.try(&.as_i) || 0
-                if code > top_language_lines
-                  top_language = language
-                  top_language_lines = code
-                end
-              end
+              # Get badge URLs and markdown using context methods
+              total_lines_badge = badge_url(BadgeType::Lines)
+              top_language_badge = badge_url(BadgeType::Language)
+              language_count_badge = badge_url(BadgeType::Languages)
+              code_comment_ratio_badge = badge_url(BadgeType::Ratio)
               
-              # Count languages
-              language_count = 0
-              result_json.as_h.each do |language, _|
-                next if language == "Total"
-                language_count += 1
-              end
+              # Get markdown for badges
+              total_lines_md = badge_markdown(BadgeType::Lines, "Lines of Code")
+              top_language_md = badge_markdown(BadgeType::Language, "Top Language")
+              language_count_md = badge_markdown(BadgeType::Languages, "Languages")
+              code_comment_ratio_md = badge_markdown(BadgeType::Ratio, "Code to Comment")
               
-              # Calculate code to comment ratio
-              code_comment_ratio = total_comments > 0 ? (total_code.to_f / total_comments).round(1) : 0
-              
-              # Get base URL from environment or server configuration
-              base_url = server_base_url
-              
-              # Dynamic badge URLs using shields.io endpoint
-              total_lines_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/lines?url=#{analysis.repo_url}")}"
-              top_language_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/language?url=#{analysis.repo_url}")}"
-              language_count_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/languages?url=#{analysis.repo_url}")}"
-              code_comment_ratio_badge = "https://img.shields.io/endpoint?url=#{URI.encode_www_form("#{base_url}/api/badge/ratio?url=#{analysis.repo_url}")}"
-              
-              # Markdown for badges
-              total_lines_md = "[![Lines of Code](#{total_lines_badge})](#{base_url}/analyze?url=#{URI.encode_www_form(analysis.repo_url)})"
-              top_language_md = "[![Top Language](#{top_language_badge})](#{base_url}/analyze?url=#{URI.encode_www_form(analysis.repo_url)})"
-              language_count_md = "[![Languages](#{language_count_badge})](#{base_url}/analyze?url=#{URI.encode_www_form(analysis.repo_url)})"
-              code_comment_ratio_md = "[![Code to Comment](#{code_comment_ratio_badge})](#{base_url}/analyze?url=#{URI.encode_www_form(analysis.repo_url)})"
+              # Get GitHub info if applicable
+              github_info_tuple = github_info
+              github_owner = github_info_tuple ? github_info_tuple[0] : ""
+              github_repo = github_info_tuple ? github_info_tuple[1] : ""
             %>
             
             <!-- Total Lines Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= "/analyze?url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                <a href="<%= badge_link_url %>" target="_blank">
                   <img src="<%= total_lines_badge %>" alt="Lines of Code">
+                  <% if is_github_repo? %>
+                  <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
+                  <% end %>
                 </a>
               </div>
               <div class="col-md-6">
@@ -165,8 +147,11 @@
             <!-- Top Language Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= "/analyze?url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                <a href="<%= badge_link_url %>" target="_blank">
                   <img src="<%= top_language_badge %>" alt="Top Language">
+                  <% if is_github_repo? %>
+                  <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
+                  <% end %>
                 </a>
               </div>
               <div class="col-md-6">
@@ -182,8 +167,11 @@
             <!-- Language Count Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= "/analyze?url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                <a href="<%= badge_link_url %>" target="_blank">
                   <img src="<%= language_count_badge %>" alt="Languages">
+                  <% if is_github_repo? %>
+                  <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
+                  <% end %>
                 </a>
               </div>
               <div class="col-md-6">
@@ -199,8 +187,11 @@
             <!-- Code to Comment Ratio Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= "/analyze?url=#{URI.encode_www_form(analysis.repo_url)}" %>" target="_blank">
+                <a href="<%= badge_link_url %>" target="_blank">
                   <img src="<%= code_comment_ratio_badge %>" alt="Code to Comment Ratio">
+                  <% if is_github_repo? %>
+                  <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
+                  <% end %>
                 </a>
               </div>
               <div class="col-md-6">
@@ -216,8 +207,11 @@
             <div class="alert alert-info mt-3">
               <small>
                 <strong>Note:</strong> These badges are dynamic and will automatically reflect the latest analysis of your repository.
-                For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository 
+                For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository
                 and want to update the badge data, you can run a new analysis after the cache period expires.
+                <% if is_github_repo? %>
+                <br><strong>GitHub Badge:</strong> GitHub専用のバッジを使用しています。これはGitHubリポジトリに最適化されたURLフォーマットです。
+                <% end %>
               </small>
             </div>
           </div>
