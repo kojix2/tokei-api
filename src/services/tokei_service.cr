@@ -18,23 +18,23 @@ module Tokei::Api::Services
     # Common URL patterns
     # GitHub URL patterns
     GITHUB_HTTPS_VALIDATION = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-    GITHUB_SSH_VALIDATION = /^git@github\.com:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    GITHUB_SSH_VALIDATION   = /^git@github\.com:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
 
     # GitHub URL patterns with capture groups for owner and repo
     GITHUB_HTTPS_EXTRACTION = /https?:\/\/(?:www\.)?github\.com\/([^\/]+)\/([^\/\.]+)(?:\.git)?/
-    GITHUB_SSH_EXTRACTION = /git@github\.com:([^\/]+)\/([^\/\.]+)(?:\.git)?/
+    GITHUB_SSH_EXTRACTION   = /git@github\.com:([^\/]+)\/([^\/\.]+)(?:\.git)?/
 
     # GitLab URL patterns
     GITLAB_HTTPS = /^https:\/\/gitlab\.com\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-    GITLAB_SSH = /^git@gitlab\.com:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    GITLAB_SSH   = /^git@gitlab\.com:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
 
     # Bitbucket URL patterns
     BITBUCKET_HTTPS = /^https:\/\/bitbucket\.org\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-    BITBUCKET_SSH = /^git@bitbucket\.org:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    BITBUCKET_SSH   = /^git@bitbucket\.org:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
 
     # Generic git URL patterns
     GENERIC_HTTPS = /^https:\/\/[\w.-]+\.[\w.-]+\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-    GENERIC_SSH = /^git@[\w.-]+\.[\w.-]+:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    GENERIC_SSH   = /^git@[\w.-]+\.[\w.-]+:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
 
     # Repository URL validation
     def self.valid_repo_url?(url : String) : Bool

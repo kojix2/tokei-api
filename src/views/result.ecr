@@ -189,10 +189,10 @@
               <div class="col-md-6">
                 <a href="<%= badge_link_url %>" target="_blank">
                   <img src="<%= code_comment_ratio_badge %>" alt="Code to Comment Ratio">
-                  <% if is_github_repo? %>
-                  <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
-                  <% end %>
                 </a>
+                <% if is_github_repo? %>
+                <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
+                <% end %>
               </div>
               <div class="col-md-6">
                 <div class="input-group">
@@ -210,7 +210,7 @@
                 For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository
                 and want to update the badge data, you can run a new analysis after the cache period expires.
                 <% if is_github_repo? %>
-                <br><strong>GitHub Badge:</strong> GitHub専用のバッジを使用しています。これはGitHubリポジトリに最適化されたURLフォーマットです。
+                <br><strong>GitHub Badge:</strong> Using GitHub-specific badge format. This URL format is optimized for GitHub repositories.
                 <% end %>
               </small>
             </div>

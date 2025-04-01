@@ -23,11 +23,6 @@ module Tokei::Api::Views::Contexts
       super(@error_message)
     end
 
-    # Get server base URL from environment or default
-    def server_base_url
-      ENV["SERVER_BASE_URL"]? || "http://localhost:3000"
-    end
-
     # Check if the repository URL is from GitHub
     def is_github_repo?
       Tokei::Api::Services::TokeiService.is_github_repo?(@analysis.repo_url)
