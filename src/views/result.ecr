@@ -62,13 +62,58 @@
                 <% total_comments += comments %>
                 <% total_blanks += blanks %>
                 
-                <tr>
-                  <td><strong><%= language %></strong></td>
+                <tr class="language-row" data-language="<%= language %>">
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="toggle-icon me-2">▶</span>
+                      <strong><%= language %></strong>
+                    </div>
+                  </td>
                   <td><%= files %></td>
                   <td><%= code %></td>
                   <td><%= comments %></td>
                   <td><%= blanks %></td>
                   <td><%= code + comments + blanks %></td>
+                </tr>
+                <tr class="file-details-row" data-language="<%= language %>" style="display: none;">
+                  <td colspan="6" class="p-0">
+                    <div class="file-details-container p-3">
+                      <table class="table table-sm file-details-table">
+                        <thead class="table-secondary">
+                          <tr>
+                            <th class="sortable" data-sort="string">File <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="number">Code <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="number">Comments <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="number">Blanks <span class="sort-icon">↕</span></th>
+                            <th class="sortable" data-sort="number">Total <span class="sort-icon">↕</span></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% if stats_obj["reports"]?.try(&.as_a) %>
+                            <% stats_obj["reports"].as_a.each do |report| %>
+                              <% report_obj = report.as_h %>
+                              <% file_name = report_obj["name"]?.try(&.as_s) || "" %>
+                              <% file_stats = report_obj["stats"]?.try(&.as_h) || {} of String => JSON::Any %>
+                              <% file_code = file_stats["code"]?.try(&.as_i) || 0 %>
+                              <% file_comments = file_stats["comments"]?.try(&.as_i) || 0 %>
+                              <% file_blanks = file_stats["blanks"]?.try(&.as_i) || 0 %>
+                              <tr>
+                                <td><code><%= file_name %></code></td>
+                                <td><%= file_code %></td>
+                                <td><%= file_comments %></td>
+                                <td><%= file_blanks %></td>
+                                <td><%= file_code + file_comments + file_blanks %></td>
+                              </tr>
+                            <% end %>
+                          <% else %>
+                            <tr>
+                              <td colspan="5" class="text-center">No detailed file information available</td>
+                            </tr>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
                 </tr>
               <% end %>
             </tbody>

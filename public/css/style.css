@@ -138,6 +138,43 @@ body {
   background-color: transparent;
 }
 
+/* Language and file details rows */
+.language-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.language-row:hover {
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.active-language-row {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+.toggle-icon {
+  display: inline-block;
+  width: 20px;
+  text-align: center;
+  color: #6366F1;
+  transition: transform 0.2s ease;
+}
+
+.file-details-container {
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.file-details-table {
+  margin-bottom: 0;
+}
+
+.file-details-table code {
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
 /* Code block */
 pre {
   border-radius: 8px;

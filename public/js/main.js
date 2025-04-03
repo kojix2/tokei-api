@@ -51,6 +51,9 @@ document.addEventListener("DOMContentLoaded", function () {
         '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analyzing...';
     });
   }
+  
+  // Setup toggle functionality for language rows
+  setupLanguageRowToggles();
 
   // JSON formatting
   const jsonResult = document.getElementById("jsonResult");
@@ -87,18 +90,77 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Table sorting functionality
-  const languageTable = document.getElementById('language-stats-table');
-  if (languageTable) {
-    initTableSort(languageTable);
-  }
+  // Initialize and perform initial sort on main language table
+  initializeMainTableSort();
 });
+
+// Setup toggle functionality for language rows
+function setupLanguageRowToggles() {
+  const languageRows = document.querySelectorAll('.language-row');
+  if (languageRows.length === 0) return;
+  
+  languageRows.forEach(row => {
+    // Add click event to the toggle icon only
+    const toggleIcon = row.querySelector('.toggle-icon');
+    if (!toggleIcon) return;
+    
+    toggleIcon.addEventListener('click', function(e) {
+      // Use stopPropagation to prevent the click from bubbling up to the row
+      e.stopPropagation();
+      
+      const language = row.dataset.language;
+      const fileDetailsRow = document.querySelector(`.file-details-row[data-language="${language}"]`);
+      if (!fileDetailsRow) return;
+      
+      // Toggle visibility
+      const isExpanded = fileDetailsRow.style.display !== 'none';
+      
+      if (isExpanded) {
+        // Collapse
+        fileDetailsRow.style.display = 'none';
+        toggleIcon.textContent = '▶';
+        row.classList.remove('active-language-row');
+      } else {
+        // Expand
+        fileDetailsRow.style.display = 'table-row';
+        toggleIcon.textContent = '▼';
+        row.classList.add('active-language-row');
+        
+        // Initialize sorting for file details table if not already initialized
+        const fileDetailsTable = fileDetailsRow.querySelector('.file-details-table');
+        if (fileDetailsTable && !fileDetailsTable.classList.contains('sort-initialized')) {
+          initTableSort(fileDetailsTable);
+          fileDetailsTable.classList.add('sort-initialized');
+        }
+      }
+    });
+  });
+}
+
+// Initialize and perform initial sort on main language table
+function initializeMainTableSort() {
+  const languageTable = document.getElementById('language-stats-table');
+  if (!languageTable) return;
+  
+  // Initialize sorting
+  initTableSort(languageTable);
+  
+  // Find the Code column (usually the 3rd column, index 2)
+  const codeColumnHeader = languageTable.querySelector('th.sortable[data-sort="number"]:nth-child(3)');
+  if (codeColumnHeader) {
+    // Trigger a click on the Code column to sort initially
+    // Using requestAnimationFrame instead of setTimeout for better performance
+    requestAnimationFrame(() => {
+      codeColumnHeader.click();
+    });
+  }
+}
 
 // Initialize table sorting functionality
 function initTableSort(table) {
   const headers = table.querySelectorAll('th.sortable');
   let currentSortColumn = null;
-  let currentSortDirection = 'asc';
+  let currentSortDirection = 'desc'; // Default to descending order
 
   headers.forEach((header, index) => {
     // Header click event
@@ -107,7 +169,7 @@ function initTableSort(table) {
       if (currentSortColumn === index) {
         currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
       } else {
-        currentSortDirection = 'asc';
+        currentSortDirection = 'desc'; // Start with descending when clicking a new column
         currentSortColumn = index;
       }
 
@@ -125,38 +187,101 @@ function initTableSort(table) {
   });
 }
 
+// Compare cell values for sorting
+function compareValues(cellA, cellB, dataType) {
+  if (dataType === 'number') {
+    // Sort as numbers
+    const numA = parseFloat(cellA.replace(/,/g, '')) || 0;
+    const numB = parseFloat(cellB.replace(/,/g, '')) || 0;
+    return numA - numB;
+  } else {
+    // Sort as strings
+    return cellA.localeCompare(cellB, 'ja');
+  }
+}
+
 // Table sorting process
 function sortTable(table, columnIndex, direction, dataType) {
-  const tbody = table.querySelector('tbody');
-  const rows = Array.from(tbody.querySelectorAll('tr'));
-  const tfoot = table.querySelector('tfoot');
+  if (!table || !table.querySelector('tbody')) return;
   
-  // Sort excluding footer rows
-  const sortedRows = rows.sort((rowA, rowB) => {
+  const tbody = table.querySelector('tbody');
+  const isMainTable = table.id === 'language-stats-table';
+  
+  if (isMainTable) {
+    // Sort main language table (with nested file details)
+    sortMainTable(tbody, columnIndex, direction, dataType);
+  } else {
+    // Sort file details table
+    sortDetailTable(tbody, columnIndex, direction, dataType);
+  }
+}
+
+// Sort main language table with nested file details
+function sortMainTable(tbody, columnIndex, direction, dataType) {
+  // Get all language rows
+  const languageRows = Array.from(tbody.querySelectorAll('tr.language-row'));
+  if (languageRows.length === 0) return;
+  
+  // Create a map of language rows and their associated detail rows
+  const rowPairs = {};
+  languageRows.forEach(row => {
+    const language = row.dataset.language;
+    const detailRow = tbody.querySelector(`.file-details-row[data-language="${language}"]`);
+    if (detailRow) {
+      rowPairs[language] = { languageRow: row, detailRow: detailRow };
+    }
+  });
+  
+  // Sort languages based on the selected column
+  const sortedLanguages = Object.keys(rowPairs).sort((langA, langB) => {
+    const rowA = rowPairs[langA].languageRow;
+    const rowB = rowPairs[langB].languageRow;
+    
     const cellA = rowA.cells[columnIndex].textContent.trim();
     const cellB = rowB.cells[columnIndex].textContent.trim();
     
-    let comparison = 0;
+    const comparison = compareValues(cellA, cellB, dataType);
     
-    if (dataType === 'number') {
-      // Sort as numbers
-      const numA = parseFloat(cellA.replace(/,/g, '')) || 0;
-      const numB = parseFloat(cellB.replace(/,/g, '')) || 0;
-      comparison = numA - numB;
-    } else {
-      // Sort as strings
-      comparison = cellA.localeCompare(cellB, 'ja');
-    }
-    
-    // Reverse result based on sort direction
+    // Apply sort direction
     return direction === 'asc' ? comparison : -comparison;
   });
   
-  // Apply sort results to the table
+  // Clear tbody
   while (tbody.firstChild) {
     tbody.removeChild(tbody.firstChild);
   }
   
+  // Append rows in sorted order, keeping language and detail rows together
+  sortedLanguages.forEach(language => {
+    const { languageRow, detailRow } = rowPairs[language];
+    tbody.appendChild(languageRow);
+    tbody.appendChild(detailRow);
+  });
+}
+
+// Sort file details table
+function sortDetailTable(tbody, columnIndex, direction, dataType) {
+  // Get all rows
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  if (rows.length === 0) return;
+  
+  // Sort rows
+  const sortedRows = rows.sort((rowA, rowB) => {
+    const cellA = rowA.cells[columnIndex].textContent.trim();
+    const cellB = rowB.cells[columnIndex].textContent.trim();
+    
+    const comparison = compareValues(cellA, cellB, dataType);
+    
+    // Apply sort direction
+    return direction === 'asc' ? comparison : -comparison;
+  });
+  
+  // Clear tbody
+  while (tbody.firstChild) {
+    tbody.removeChild(tbody.firstChild);
+  }
+  
+  // Append sorted rows
   sortedRows.forEach(row => {
     tbody.appendChild(row);
   });
