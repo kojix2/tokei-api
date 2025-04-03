@@ -1,0 +1,125 @@
+<div class="row">
+  <div class="col-md-10 offset-md-1">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">API</h2>
+      </div>
+      <div class="card-body">
+        <p class="lead">
+          tokei-api provides a consistent RESTful API for analyzing code statistics in Git repositories.
+        </p>
+        
+        <h3>Core API</h3>
+        <ul>
+          <li><code>POST /api/analyses</code> - Analyze a repository</li>
+          <li><code>GET /api/analyses?url=...</code> - Retrieve cached analysis result by repository URL</li>
+          <li><code>GET /api/analyses/:id</code> - Retrieve a specific analysis result</li>
+          <li><code>GET /api/analyses/:id/languages</code> - Get language statistics</li>
+          <li><code>GET /api/analyses/:id/badges/:type</code> - Get badge data</li>
+          <li>
+            <code>GET /api/badge/:type?url=...</code> - Retrieves badge data in Shields.io compatible format for the specified repository.
+            Available badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, <code>ratio</code>.
+          </li>
+        </ul>
+        
+        <h3>GitHub-specific API</h3>
+        <ul>
+          <li><code>GET /api/github/:owner/:repo</code> - Analyze a GitHub repository</li>
+          <li><code>GET /api/github/:owner/:repo/languages</code> - Get language statistics for a GitHub repository</li>
+          <li><code>GET /api/github/:owner/:repo/badges/:type</code> - Get badge data for a GitHub repository</li>
+        </ul>
+        
+        <h3>Badge API</h3>
+        <ul>
+          <li><code>GET /badge/github/:owner/:repo/:type</code> - Simplified URL for retrieving badge data in shields.io compatible format</li>
+        </ul>
+        <p>Available badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, <code>ratio</code></p>
+        
+        <h3>Usage Examples</h3>
+        <pre class="bg-light p-3"><code>
+// Analyze a repository
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://github.com/kojix2/tokei-api"}' \
+  https://tokei.kojix2.net/api/analyses
+
+// Retrieve cached analysis result
+curl "https://tokei.kojix2.net/api/analyses?url=https://github.com/kojix2/tokei-api"
+
+// Analyze a GitHub repository directly
+curl https://tokei.kojix2.net/api/github/kojix2/tokei-api
+
+// Retrieve badge data for any Git repository
+curl "https://tokei.kojix2.net/api/badge/lines?url=https://github.com/kojix2/tokei-api"
+        </code></pre>
+        
+        <h3>Response Format</h3>
+        <p>All API endpoints return JSON responses. Here's an example response from <code>GET /api/github/:owner/:repo</code>:</p>
+        
+        <pre class="bg-light p-3"><code>{
+  "data": {
+    "id": "12345678-1234-1234-1234-123456789012",
+    "url": "https://github.com/kojix2/tokei-api",
+    "owner": "kojix2",
+    "repo": "tokei-api",
+    "analyzed_at": "2023-01-01T12:00:00Z",
+    "status": "completed",
+    "summary": {
+      "total_lines": 5000,
+      "total_code": 4000,
+      "total_comments": 500,
+      "total_blanks": 500,
+      "languages_count": 5,
+      "top_language": "Crystal",
+      "code_comment_ratio": 8.0
+    },
+    "languages": {
+      "Crystal": {
+        "files": 10,
+        "code": 3000,
+        "comments": 400,
+        "blanks": 300
+      },
+      "JavaScript": {
+        "files": 2,
+        "code": 500,
+        "comments": 50,
+        "blanks": 100
+      },
+      "...": {}
+    },
+    "links": {
+      "self": "/api/github/kojix2/tokei-api",
+      "languages": "/api/github/kojix2/tokei-api/languages",
+      "web": "/github/kojix2/tokei-api",
+      "badges": {
+        "lines": "/api/github/kojix2/tokei-api/badges/lines",
+        "language": "/api/github/kojix2/tokei-api/badges/language",
+        "languages": "/api/github/kojix2/tokei-api/badges/languages",
+        "ratio": "/api/github/kojix2/tokei-api/badges/ratio"
+      }
+    }
+  }
+}</code></pre>
+        
+        <h3>Error Handling</h3>
+        <p>In case of an error, the API returns an appropriate HTTP status code along with a JSON error response:</p>
+        
+        <pre class="bg-light p-3"><code>{
+  "error": {
+    "code": "invalid_request",
+    "message": "Invalid repository URL",
+    "status": 400
+  }
+}</code></pre>
+        
+        <div class="alert alert-info mt-3">
+          <small>
+            <strong>Note:</strong> For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository 
+            and want to update the data, you can run a new analysis after the cache period expires.
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

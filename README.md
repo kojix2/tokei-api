@@ -129,7 +129,12 @@ These badges are dynamic and will automatically reflect the latest analysis of y
 
 ### Web Interface
 
-Access http://localhost:3000 in your browser and enter a repository URL in the form to run the analysis.
+The web interface consists of several pages:
+
+- **Home page**: Access http://localhost:3000 to enter a repository URL for analysis
+- **Results page**: View detailed analysis with graphs and statistics
+- **API page**: Documentation for the REST API endpoints
+- **Badges page**: Information on how to integrate badges into your projects
 
 For GitHub repositories, you can use the direct access URL format:
 

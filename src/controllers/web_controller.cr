@@ -132,6 +132,18 @@ module Tokei::Api::Controllers
         end
       end
 
+      # GET /api endpoint (API documentation page)
+      get "/api" do |env|
+        error_message = nil
+        Tokei::Api::Views::Renderer.render_api(error_message)
+      end
+
+      # GET /badges endpoint (badges documentation page)
+      get "/badges" do |env|
+        error_message = nil
+        Tokei::Api::Views::Renderer.render_badges(error_message)
+      end
+
       # Error handling
       error 404 do |env|
         env.response.content_type = "text/html"

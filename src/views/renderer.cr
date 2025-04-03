@@ -2,6 +2,8 @@ require "./contexts/index_context"
 require "./contexts/result_context"
 require "./contexts/error_context"
 require "./contexts/layout_context"
+require "./contexts/api_context"
+require "./contexts/badges_context"
 
 module Tokei::Api::Views
   # Rendering helper
@@ -24,6 +26,16 @@ module Tokei::Api::Views
     def self.render_error(error_message = nil)
       error_context = Contexts::ErrorContext.new(error_message)
       render_with_layout(error_context, error_message)
+    end
+
+    def self.render_api(error_message = nil)
+      api_context = Contexts::ApiContext.new(error_message)
+      render_with_layout(api_context, error_message)
+    end
+
+    def self.render_badges(error_message = nil)
+      badges_context = Contexts::BadgesContext.new(error_message)
+      render_with_layout(badges_context, error_message)
     end
   end
 end

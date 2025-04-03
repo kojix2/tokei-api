@@ -25,19 +25,10 @@
         <h3 class="mb-0">Badge Feature</h3>
       </div>
       <div class="card-body">
-        <p>tokei-api provides dynamic badges that you can add to your README or other documentation. These badges visually display code statistics.</p>
+        <p>tokei-api generates badges that display code statistics for your repository. You can embed these in your README or other documentation.</p>
         
-        <h4>Available Badges</h4>
-        <div class="row mb-4">
-          <div class="col-md-6">
-            <ul>
-              <li><strong>Lines of Code</strong>: Total lines of code</li>
-              <li><strong>Top Language</strong>: Most used programming language</li>
-              <li><strong>Languages</strong>: Number of languages used</li>
-              <li><strong>Code to Comment</strong>: Ratio of code to comments</li>
-            </ul>
-          </div>
-          <div class="col-md-6">
+        <div class="row mb-3">
+          <div class="col-md-12">
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/lines?url=https://github.com/kojix2/tokei-api") %>" alt="Lines of Code"></a>
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/language?url=https://github.com/kojix2/tokei-api") %>" alt="Top Language"></a>
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/languages?url=https://github.com/kojix2/tokei-api") %>" alt="Languages"></a>
@@ -45,35 +36,8 @@
           </div>
         </div>
         
-        <h4>How to Use Badges</h4>
-        <p>tokei-api provides badges for both GitHub repositories and any other Git repository. You can add these badges to your README or other documentation.</p>
-        
-        <h5>For GitHub Repositories</h5>
-        <p>To add badges for a GitHub repository, use the following markdown format:</p>
-        
-        <pre class="bg-light p-3"><code>[![Lines of Code](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/owner/repo/lines") %>)](<%= server_base_url %>/github/owner/repo)</code></pre>
-        
-        <p>For example, badges for this project (tokei-api):</p>
-        
-        <pre class="bg-light p-3"><code>[![Lines of Code](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/lines") %>)](<%= server_base_url %>/github/kojix2/tokei-api)
-[![Top Language](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/language") %>)](<%= server_base_url %>/github/kojix2/tokei-api)
-[![Languages](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/languages") %>)](<%= server_base_url %>/github/kojix2/tokei-api)
-[![Code to Comment](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/ratio") %>)](<%= server_base_url %>/github/kojix2/tokei-api)</code></pre>
-        
-        <h5>For Any Git Repository</h5>
-        <p>For repositories hosted on other platforms (GitLab, Bitbucket, etc.), first analyze the repository using the form above, then use the following markdown format:</p>
-        
-        <pre class="bg-light p-3"><code>[![Lines of Code](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/lines?url=https://example.com/user/repo.git") %>)](https://example.com/user/repo)</code></pre>
-        
-        <p>Replace <code>https://example.com/user/repo.git</code> with your repository URL. You can use any of the badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, or <code>ratio</code>.</p>
-        
-        <div class="alert alert-info mt-3">
-          <small>
-            <strong>Note:</strong> These badges are dynamic and will automatically reflect the latest analysis of your repository.
-            For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository 
-            and want to update the badge data, you can run a new analysis after the cache period expires.
-          </small>
-        </div>
+        <p>To use badges, first analyze your repository using the form above. For detailed usage instructions, visit our badge documentation page:</p>
+        <a href="/badges" class="btn btn-primary">View Badges</a>
       </div>
     </div>
 
@@ -96,49 +60,20 @@
     
 		<div class="card mt-4">
 		  <div class="card-header bg-info text-white">
-		    <h3 class="mb-0">API Documentation</h3>
+		    <h3 class="mb-0">API</h3>
 		  </div>
 		  <div class="card-body">
-		    <p>tokei-api provides a consistent RESTful API. The following endpoints are available:</p>
-		    
-		    <h4>Core API</h4>
+		    <p>tokei-api provides a consistent RESTful API for analyzing code statistics in Git repositories.</p>
+		    <p>The API allows you to:</p>
 		    <ul>
-		      <li><code>POST /api/analyses</code> - Analyze a repository</li>
-		      <li><code>GET /api/analyses?url=...</code> - Retrieve cached analysis result by repository URL</li>
-		      <li><code>GET /api/analyses/:id</code> - Retrieve a specific analysis result</li>
-		      <li><code>GET /api/analyses/:id/languages</code> - Get language statistics</li>
-		      <li><code>GET /api/analyses/:id/badges/:type</code> - Get badge data</li>
-		      <li>
-		        <code>GET /api/badge/:type?url=...</code> - Retrieves badge data in Shields.io compatible format for the specified repository.
-		        Available badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, <code>ratio</code>.
-		      </li>
+		      <li>Analyze repositories and retrieve code statistics</li>
+		      <li>Get language-specific information</li>
+		      <li>Generate badges for your README</li>
+		      <li>Access GitHub repositories directly</li>
 		    </ul>
-		    
-		    <h4>GitHub-specific API</h4>
-		    <ul>
-		      <li><code>GET /api/github/:owner/:repo</code> - Analyze a GitHub repository</li>
-		      <li><code>GET /api/github/:owner/:repo/languages</code> - Get language statistics for a GitHub repository</li>
-		      <li><code>GET /api/github/:owner/:repo/badges/:type</code> - Get badge data for a GitHub repository</li>
-		    </ul>
-		    
-		    <h4>Usage Examples</h4>
-		    <pre class="bg-light p-3"><code>
-// Analyze a repository
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"url":"https://github.com/kojix2/tokei-api"}' \
-  https://tokei.kojix2.net/api/analyses
-
-// Retrieve cached analysis result
-curl "https://tokei.kojix2.net/api/analyses?url=https://github.com/kojix2/tokei-api"
-
-// Analyze a GitHub repository directly
-curl https://tokei.kojix2.net/api/github/kojix2/tokei-api
-
-// Retrieve badge data for any Git repository
-curl "https://tokei.kojix2.net/api/badge/lines?url=https://github.com/kojix2/tokei-api"
-		    </code></pre>
-      </div>
-    </div>
+		    <p>For detailed documentation and usage examples, please visit our API page:</p>
+		    <a href="/api" class="btn btn-info">View API</a>
+		  </div>
+		</div>
 	</div>
 </div>
