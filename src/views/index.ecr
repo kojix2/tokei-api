@@ -1,79 +1,88 @@
-<div class="row">
-  <div class="col-md-10 offset-md-1">
-    <div class="card">
-      <div class="card-header bg-primary text-white">
-        <h2 class="mb-0">Code Line Counter</h2>
-      </div>
-      <div class="card-body">
-        <p class="lead">
-          Enter a Git repository URL to get source code statistics using <a href="https://github.com/XAMPPRocky/tokei" target="_blank">tokei</a>.
-        </p>
-        
-        <form action="/analyses" method="post">
-          <div class="mb-3">
-            <label for="repo_url" class="form-label">Repository URL</label>
-            <input type="text" class="form-control" id="repo_url" name="url" placeholder="https://github.com/username/repository.git" required>
-            <div class="form-text">Example: <a href="#" class="text-decoration-none small" id="example-repo-link" onclick="fillExampleRepo(event)">https://github.com/kojix2/tokei-api</a></div>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="card shadow-sm border-0 rounded-3 mb-5">
+        <div class="card-header py-3" style="background: linear-gradient(135deg, #6e42d3 0%, #4b79cf 100%); color: white;">
+          <h1 class="display-6 mb-0">Code Line Counter</h1>
+        </div>
+        <div class="card-body p-4">
+          <p class="lead mb-4">
+            Get code statistics and badges for any Git repository using <a href="https://github.com/XAMPPRocky/tokei" target="_blank">tokei</a>.
+          </p>
+          
+          <div class="row justify-content-center mb-4">
+            <div class="col-md-10">
+              <form action="/analyses" method="post">
+                <div class="mb-3">
+                  <label for="repo_url" class="form-label h4">Repository URL</label>
+                  <div class="row g-2">
+                    <div class="col-md-9">
+                      <input type="text" class="form-control form-control-lg" id="repo_url" name="url" placeholder="https://github.com/username/repository.git" required>
+                    </div>
+                    <div class="col-md-3">
+                      <button type="submit" class="btn btn-lg w-100 h-100" style="background: linear-gradient(135deg, #6e42d3 0%, #4b79cf 100%); color: white;">Analyze</button>
+                    </div>
+                  </div>
+                  <div class="form-text mt-2">Example: <a href="#" class="text-decoration-none" id="example-repo-link" onclick="fillExampleRepo(event)">https://github.com/kojix2/tokei-api</a></div>
+                </div>
+              </form>
+            </div>
           </div>
-          <button type="submit" class="btn btn-primary">Analyze</button>
-        </form>
-      </div>
-    </div>
-    
-    <div class="card mt-4">
-      <div class="card-header bg-primary text-white">
-        <h3 class="mb-0">Badge Feature</h3>
-      </div>
-      <div class="card-body">
-        <p>tokei-api generates badges that display code statistics for your repository. You can embed these in your README or other documentation.</p>
-        
-        <div class="row mb-3">
-          <div class="col-md-12">
+          
+          <div class="text-center mb-3">
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/lines?url=https://github.com/kojix2/tokei-api") %>" alt="Lines of Code"></a>
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/language?url=https://github.com/kojix2/tokei-api") %>" alt="Top Language"></a>
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/languages?url=https://github.com/kojix2/tokei-api") %>" alt="Languages"></a>
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/ratio?url=https://github.com/kojix2/tokei-api") %>" alt="Code to Comment"></a>
           </div>
+              
+          <div class="text-center">
+            <p>For detailed information about badges, visit our <a href="/badges">badges documentation</a>.</p>
+          </div>
         </div>
-        
-        <p>To use badges, first analyze your repository using the form above. For detailed usage instructions, visit our badge documentation page:</p>
-        <a href="/badges" class="btn btn-primary">View Badges</a>
       </div>
     </div>
+  </div>
 
-    <div class="card mt-4">
-      <div class="card-header bg-success text-white">
-        <h3 class="mb-0">GitHub Direct Access</h3>
-      </div>
-      <div class="card-body">
-        <p>You can directly access GitHub repositories using the following format:</p>
-        
-        <pre class="bg-light p-3"><code><%= server_base_url %>/github/:owner/:repo</code></pre>
-        
-        <p>For example, to analyze the Crystal language repository:</p>
-        
-        <pre class="bg-light p-3"><code><%= server_base_url %>/github/kojix2/tokei-api</code></pre>
-        
-        <p>This allows you to access analysis results directly without having to input the repository URL.</p>
+  <div class="row justify-content-center">
+    <div class="col-md-5 mb-4">
+      <div class="card shadow-sm border-0 rounded-3 h-100">
+        <div class="card-header py-3" style="background: linear-gradient(135deg, #2e8b57 0%, #3cb371 100%); color: white;">
+          <h2 class="h4 mb-0">GitHub Direct Access</h2>
+        </div>
+        <div class="card-body p-4">
+          <p>You can directly access GitHub repositories using the following format:</p>
+          
+          <pre class="bg-light p-3 rounded"><code><%= server_base_url %>/github/:owner/:repo</code></pre>
+          
+          <p>For example, to analyze the Crystal language repository:</p>
+          
+          <pre class="bg-light p-3 rounded"><code><%= server_base_url %>/github/kojix2/tokei-api</code></pre>
+          
+          <p>This allows you to access analysis results directly without having to input the repository URL.</p>
+        </div>
       </div>
     </div>
     
-		<div class="card mt-4">
-		  <div class="card-header bg-info text-white">
-		    <h3 class="mb-0">API</h3>
-		  </div>
-		  <div class="card-body">
-		    <p>tokei-api provides a consistent RESTful API for analyzing code statistics in Git repositories.</p>
-		    <p>The API allows you to:</p>
-		    <ul>
-		      <li>Analyze repositories and retrieve code statistics</li>
-		      <li>Get language-specific information</li>
-		      <li>Generate badges for your README</li>
-		      <li>Access GitHub repositories directly</li>
-		    </ul>
-		    <p>For detailed documentation and usage examples, please visit our API page:</p>
-		    <a href="/api" class="btn btn-info">View API</a>
-		  </div>
-		</div>
-	</div>
+    <div class="col-md-5 mb-4">
+      <div class="card shadow-sm border-0 rounded-3 h-100">
+        <div class="card-header py-3" style="background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%); color: white;">
+          <h2 class="h4 mb-0">API</h2>
+        </div>
+        <div class="card-body p-4">
+          <p>tokei-api provides a consistent RESTful API for analyzing code statistics in Git repositories.</p>
+          <p>The API allows you to:</p>
+          <ul>
+            <li>Analyze repositories and retrieve code statistics</li>
+            <li>Get language-specific information</li>
+            <li>Generate badges for your README</li>
+            <li>Access GitHub repositories directly</li>
+          </ul>
+          <div class="mt-4">
+            <a href="/api" class="btn" style="background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%); color: white;">View API</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
