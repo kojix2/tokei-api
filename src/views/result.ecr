@@ -9,23 +9,23 @@
       </div>
       <div class="card-body">
         <div class="row mb-4">
-          <div class="col-md-6">
+          <div class="col-md-8">
             <div class="card h-100">
               <div class="card-header">
                 <h4>Lines of Code by Language</h4>
               </div>
               <div class="card-body">
-                <canvas id="languageChart" width="400" height="400"></canvas>
+                <canvas id="languageChart" width="450" height="250"></canvas>
               </div>
             </div>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
             <div class="card h-100">
               <div class="card-header">
                 <h4>Code, Comments, and Blank Lines Ratio</h4>
               </div>
               <div class="card-body">
-                <canvas id="codeTypeChart" width="300" height="300"></canvas>
+                <canvas id="codeTypeChart" width="220" height="220"></canvas>
               </div>
             </div>
           </div>
@@ -311,6 +311,8 @@ document.addEventListener('DOMContentLoaded', function() {
     options: {
       indexAxis: 'y',
       responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2,
       scales: {
         x: {
           beginAtZero: true
@@ -344,7 +346,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }]
     },
     options: {
-      responsive: true
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
     }
   });
 });
