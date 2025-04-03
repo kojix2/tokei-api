@@ -1,5 +1,7 @@
 # tokei-api
 
+https://tokei.kojix2.net/
+
 [![Lines of Code](https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fkojix2%2Ftokei-api%2Flines)](https://tokei.kojix2.net/github/kojix2/tokei-api)
 [![Top Language](https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fkojix2%2Ftokei-api%2Flanguage)](https://tokei.kojix2.net/github/kojix2/tokei-api)
 [![Languages](https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fkojix2%2Ftokei-api%2Flanguages)](https://tokei.kojix2.net/github/kojix2/tokei-api)
