@@ -2,6 +2,68 @@ require "spec"
 require "../../src/services/tokei_service"
 
 describe Tokei::Api::Services::TokeiService do
+  describe ".extract_github_info" do
+    it "extracts owner and repo from GitHub HTTPS URLs" do
+      # Basic GitHub HTTPS URL
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/kojix2/tokei-api").not_nil!
+      owner.should eq("kojix2")
+      repo.should eq("tokei-api")
+
+      # URL with .git extension
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/kojix2/tokei-api.git").not_nil!
+      owner.should eq("kojix2")
+      repo.should eq("tokei-api")
+
+      # URL with multiple .git extensions
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/kojix2/tokei-api.git.git.git").not_nil!
+      owner.should eq("kojix2")
+      repo.should eq("tokei-api")
+
+      # URL with period in repo name
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/ggml-org/llama.cpp").not_nil!
+      owner.should eq("ggml-org")
+      repo.should eq("llama.cpp")
+
+      # URL with period in repo name and .git extension
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/ggml-org/llama.cpp.git").not_nil!
+      owner.should eq("ggml-org")
+      repo.should eq("llama.cpp")
+    end
+
+    it "extracts owner and repo from GitHub SSH URLs" do
+      # Basic GitHub SSH URL
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:kojix2/tokei-api").not_nil!
+      owner.should eq("kojix2")
+      repo.should eq("tokei-api")
+
+      # URL with .git extension
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:kojix2/tokei-api.git").not_nil!
+      owner.should eq("kojix2")
+      repo.should eq("tokei-api")
+
+      # URL with multiple .git extensions
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:kojix2/tokei-api.git.git.git").not_nil!
+      owner.should eq("kojix2")
+      repo.should eq("tokei-api")
+
+      # URL with period in repo name
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:ggml-org/llama.cpp").not_nil!
+      owner.should eq("ggml-org")
+      repo.should eq("llama.cpp")
+
+      # URL with period in repo name and .git extension
+      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:ggml-org/llama.cpp.git").not_nil!
+      owner.should eq("ggml-org")
+      repo.should eq("llama.cpp")
+    end
+
+    it "returns nil for invalid GitHub URLs" do
+      Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/kojix2").should be_nil
+      Tokei::Api::Services::TokeiService.extract_github_info("https://github.com").should be_nil
+      Tokei::Api::Services::TokeiService.extract_github_info("not a url").should be_nil
+    end
+  end
+
   describe ".valid_repo_url?" do
     it "validates GitHub HTTPS URLs" do
       # Basic GitHub HTTPS URL

@@ -6,8 +6,8 @@ require "dotenv"
 module Tokei::Api::Services
   # Service class for executing tokei command
   class TokeiService
-    # Load environment variables
-    Dotenv.load
+    # Load environment variables (skip in test environment)
+    Dotenv.load unless ENV["CRYSTAL_ENV"]? == "test"
 
     # Base path for temporary directory
     TEMP_DIR_BASE = ENV["TEMP_DIR"]? || "/tmp/tokei-api"
@@ -21,8 +21,9 @@ module Tokei::Api::Services
     GITHUB_SSH_VALIDATION   = /^git@github\.com:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
 
     # GitHub URL patterns with capture groups for owner and repo
-    GITHUB_HTTPS_EXTRACTION = /https?:\/\/(?:www\.)?github\.com\/([^\/]+)\/([^\/\.]+)(?:\.git)?/
-    GITHUB_SSH_EXTRACTION   = /git@github\.com:([^\/]+)\/([^\/\.]+)(?:\.git)?/
+    # The regex captures the owner and repository name, removing any .git extension at the end
+    GITHUB_HTTPS_EXTRACTION = /https?:\/\/(?:www\.)?github\.com\/([^\/]+)\/([a-zA-Z0-9._-]+?)(?:\.git)?$/
+    GITHUB_SSH_EXTRACTION   = /git@github\.com:([^\/]+)\/([a-zA-Z0-9._-]+?)(?:\.git)?$/
 
     # GitLab URL patterns
     GITLAB_HTTPS = /^https:\/\/gitlab\.com\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
@@ -52,9 +53,17 @@ module Tokei::Api::Services
     # Extract owner and repo from GitHub URL
     def self.extract_github_info(url : String) : {String, String}?
       if match = url.match(GITHUB_HTTPS_EXTRACTION)
-        return {match[1], match[2]}
+        owner = match[1]
+        repo = match[2]
+        # Remove all .git extensions from the end of the repo name
+        repo = repo.gsub(/\.git(?:\.git)*$/, "")
+        return {owner, repo}
       elsif match = url.match(GITHUB_SSH_EXTRACTION)
-        return {match[1], match[2]}
+        owner = match[1]
+        repo = match[2]
+        # Remove all .git extensions from the end of the repo name
+        repo = repo.gsub(/\.git(?:\.git)*$/, "")
+        return {owner, repo}
       end
 
       nil

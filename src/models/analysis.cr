@@ -36,7 +36,7 @@ module Tokei::Api::Models
     def self.cleanup_old_data : Int64
       # Get retention days from environment variable or use default (30 days)
       retention_days = ENV["RETENTION_DAYS"]?.try(&.to_i?) || 30
-      
+
       conn = Tokei::Api::Config::Database.connection
       begin
         result = conn.exec("DELETE FROM analyses WHERE analyzed_at < $1", Time.utc - retention_days.days)
