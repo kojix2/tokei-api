@@ -1,0 +1,55 @@
+name: Crystal CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tokei_api_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Crystal
+      uses: crystal-lang/install-crystal@v1
+      with:
+        crystal: latest
+    
+    - name: Install tokei
+      run: |
+        cargo install tokei
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: shards install
+    
+    - name: Setup database
+      run: |
+        echo "Creating test database..."
+        PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE tokei_api_test;"
+      
+    - name: Run tests
+      env:
+        CRYSTAL_ENV: test
+        DATABASE_URL: postgresql://postgres:postgres@localhost/tokei_api_test
+      run: crystal spec
+    
+    - name: Check formatting
+      run: crystal tool format --check
