@@ -86,6 +86,7 @@ Available badge types: `lines`, `language`, `languages`, `ratio`
    - `DATABASE_PROVIDER`: Database provider (local or neon)
    - `TEMP_DIR`: Directory for temporary git clones
    - `CLONE_TIMEOUT_SECONDS`: Timeout for git clone operations (default: 30)
+   - `RETENTION_DAYS`: Number of days to retain analysis data (default: 30)
 
 4. Prepare the database
 

@@ -31,6 +31,21 @@ module Tokei::Api::Models
       extract_stats_from_result
     end
 
+    # Delete analyses older than the retention period (default: 30 days)
+    # Can be configured via RETENTION_DAYS environment variable
+    def self.cleanup_old_data : Int64
+      # Get retention days from environment variable or use default (30 days)
+      retention_days = ENV["RETENTION_DAYS"]?.try(&.to_i?) || 30
+      
+      conn = Tokei::Api::Config::Database.connection
+      begin
+        result = conn.exec("DELETE FROM analyses WHERE analyzed_at < $1", Time.utc - retention_days.days)
+        result.rows_affected
+      ensure
+        conn.close
+      end
+    end
+
     # Extract statistics from result JSON for badge generation
     private def extract_stats_from_result
       total_code = 0

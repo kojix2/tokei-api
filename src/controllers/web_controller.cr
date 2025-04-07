@@ -132,7 +132,18 @@ module Tokei::Api::Controllers
         end
       end
 
-      # GET /api endpoint (API documentation page)
+      # POST /cleanup endpoint (delete old data)
+      post "/cleanup" do |env|
+        begin
+          deleted_count = Tokei::Api::Models::Analysis.cleanup_old_data
+          env.response.status_code = 200
+          env.response.print "Deleted #{deleted_count} old records."
+        rescue ex
+          env.response.status_code = 500
+          env.response.print "Error during cleanup: #{ex.message}"
+        end
+      end
+
       get "/api" do |env|
         error_message = nil
         Tokei::Api::Views::Renderer.render_api(error_message)
