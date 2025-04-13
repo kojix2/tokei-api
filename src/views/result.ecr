@@ -98,7 +98,16 @@
                               <% file_comments = file_stats["comments"]?.try(&.as_i) || 0 %>
                               <% file_blanks = file_stats["blanks"]?.try(&.as_i) || 0 %>
                               <tr>
-                                <td><code><%= file_name %></code></td>
+                                <td>
+                                  <% if is_github_repo? && (info = github_info) %>
+                                    <% owner, repo = info %>
+                                    <a href="https://github.com/<%= owner %>/<%= repo %>/blob/HEAD/<%= file_name %>" target="_blank">
+                                      <code><%= file_name %></code>
+                                    </a>
+                                  <% else %>
+                                    <code><%= file_name %></code>
+                                  <% end %>
+                                </td>
                                 <td><%= file_code %></td>
                                 <td><%= file_comments %></td>
                                 <td><%= file_blanks %></td>
