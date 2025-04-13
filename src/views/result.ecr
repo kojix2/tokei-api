@@ -3,7 +3,12 @@
     <div class="card">
       <div class="card-header bg-success text-white">
         <div class="d-flex justify-content-between align-items-center">
-          <h2 class="mb-0">Analysis Results: <%= analysis.repo_url %></h2>
+            <h2 class="mb-0">
+              Analysis Results: 
+              <a href="<%= analysis.repo_url %>" target="_blank" class="text-white">
+              <%= analysis.repo_url %>
+              </a>
+            </h2>
           <small><%= analysis.analyzed_at.not_nil!.to_s("%Y-%m-%d %H:%M") %></small>
         </div>
       </div>
