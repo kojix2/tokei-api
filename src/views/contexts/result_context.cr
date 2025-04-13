@@ -80,6 +80,11 @@ module Tokei::Api::Views::Contexts
       ENV["GITHUB_NEXT_VISUALIZATION_URL"]? || "https://mango-dune-07a8b7110.1.azurestaticapps.net"
     end
 
+    # Get GitDiagram service URL for GitHub repositories
+    def gitdiagram_url(owner : String, repo : String) : String
+      "https://gitdiagram.com/#{owner}/#{repo}"
+    end
+
     ECR.def_to_s "#{__DIR__}/../../views/result.ecr"
   end
 end
