@@ -288,10 +288,6 @@
         <div class="mt-4">
           <a href="/" class="btn btn-primary">Back to Home</a>
           <a href="/api/analyses/<%= analysis.id %>" class="btn btn-info" target="_blank">View as JSON</a>
-          <% if is_github_repo? && (info = github_info) %>
-            <% owner, repo = info %>
-            <a href="<%= github_next_visualization_url %>/?repo=<%= owner %>%2F<%= repo %>" class="btn btn-success" target="_blank">Repo Visualization</a>
-          <% end %>
         </div>
       </div>
     </div>
