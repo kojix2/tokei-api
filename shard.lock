@@ -14,11 +14,11 @@ shards:
 
   exception_page:
     git: https://github.com/crystal-loot/exception_page.git
-    version: 0.4.1
+    version: 0.5.0
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
-    version: 1.6.0
+    version: 1.7.1
 
   pg:
     git: https://github.com/will/crystal-pg.git
