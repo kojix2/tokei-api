@@ -132,6 +132,10 @@ describe Tokei::Api::Services::TokeiService do
       Tokei::Api::Services::TokeiService.valid_repo_url?("https://git.example.com/user/repo/").should be_true
       Tokei::Api::Services::TokeiService.valid_repo_url?("https://git.example.com/user/repo-name/").should be_true
 
+      # SourceHut (sr.ht) real repository
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://git.sr.ht/~sircmpwn/man.sr.ht").should be_true
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@git.sr.ht:~sircmpwn/man.sr.ht").should be_true
+
       # Generic SSH URL
       Tokei::Api::Services::TokeiService.valid_repo_url?("git@git.example.com:user/repo.git").should be_true
       Tokei::Api::Services::TokeiService.valid_repo_url?("git@git.example.com:user/repo-name.git").should be_true

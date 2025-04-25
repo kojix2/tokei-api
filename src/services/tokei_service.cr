@@ -34,8 +34,9 @@ module Tokei::Api::Services
     BITBUCKET_SSH   = /^git@bitbucket\.org:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
 
     # Generic git URL patterns
-    GENERIC_HTTPS = /^https:\/\/[\w.-]+\.[\w.-]+\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
-    GENERIC_SSH   = /^git@[\w.-]+\.[\w.-]+:[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
+    # Allow ~ and other common user/repo characters
+    GENERIC_HTTPS = /^https:\/\/[\w.~:-]+\.[\w.~:-]+\/[\w.~:-]+\/[\w.~:-]+(?:\.git|\/)?$/
+    GENERIC_SSH   = /^git@[\w.~:-]+\.[\w.~:-]+:[\w.~:-]+\/[\w.~:-]+(?:\.git|\/)?$/
 
     # Repository URL validation
     def self.valid_repo_url?(url : String) : Bool
