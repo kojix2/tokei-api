@@ -40,6 +40,7 @@ document.head.insertAdjacentHTML(
 `
 );
 
+// Reset Analyze button state when navigating back
 window.addEventListener("pageshow", function (event) {
   if (event.persisted) {
     const repoForm = document.querySelector('form[action="/analyses"]');
@@ -47,13 +48,15 @@ window.addEventListener("pageshow", function (event) {
       const submitBtn = repoForm.querySelector('button[type="submit"]');
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = "Analyze";
+        const initialLabel = submitBtn.getAttribute("data-initial-label") || "Analyze";
+        submitBtn.innerHTML = initialLabel;
       }
     }
   }
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+  
   // Form submission handling
   const repoForm = document.querySelector('form[action="/analyses"]');
   if (repoForm) {
