@@ -11,7 +11,9 @@ function fillExampleRepo(event) {
 }
 
 // Styles for table sorting
-document.head.insertAdjacentHTML('beforeend', `
+document.head.insertAdjacentHTML(
+  "beforeend",
+  `
   <style>
     .sortable {
       cursor: pointer;
@@ -35,7 +37,21 @@ document.head.insertAdjacentHTML('beforeend', `
       opacity: 1;
     }
   </style>
-`);
+`
+);
+
+window.addEventListener("pageshow", function (event) {
+  if (event.persisted) {
+    const repoForm = document.querySelector('form[action="/analyses"]');
+    if (repoForm) {
+      const submitBtn = repoForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "Analyze";
+      }
+    }
+  }
+});
 
 document.addEventListener("DOMContentLoaded", function () {
   // Form submission handling
@@ -51,7 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
         '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analyzing...';
     });
   }
-  
+
   // Setup toggle functionality for language rows
   setupLanguageRowToggles();
 
@@ -96,41 +112,48 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Setup toggle functionality for language rows
 function setupLanguageRowToggles() {
-  const languageRows = document.querySelectorAll('.language-row');
+  const languageRows = document.querySelectorAll(".language-row");
   if (languageRows.length === 0) return;
-  
-  languageRows.forEach(row => {
+
+  languageRows.forEach((row) => {
     // Add click event to the toggle icon only
-    const toggleIcon = row.querySelector('.toggle-icon');
+    const toggleIcon = row.querySelector(".toggle-icon");
     if (!toggleIcon) return;
-    
-    toggleIcon.addEventListener('click', function(e) {
+
+    toggleIcon.addEventListener("click", function (e) {
       // Use stopPropagation to prevent the click from bubbling up to the row
       e.stopPropagation();
-      
+
       const language = row.dataset.language;
-      const fileDetailsRow = document.querySelector(`.file-details-row[data-language="${language}"]`);
+      const fileDetailsRow = document.querySelector(
+        `.file-details-row[data-language="${language}"]`
+      );
       if (!fileDetailsRow) return;
-      
+
       // Toggle visibility
-      const isExpanded = fileDetailsRow.style.display !== 'none';
-      
+      const isExpanded = fileDetailsRow.style.display !== "none";
+
       if (isExpanded) {
         // Collapse
-        fileDetailsRow.style.display = 'none';
-        toggleIcon.textContent = '▶';
-        row.classList.remove('active-language-row');
+        fileDetailsRow.style.display = "none";
+        toggleIcon.textContent = "▶";
+        row.classList.remove("active-language-row");
       } else {
         // Expand
-        fileDetailsRow.style.display = 'table-row';
-        toggleIcon.textContent = '▼';
-        row.classList.add('active-language-row');
-        
+        fileDetailsRow.style.display = "table-row";
+        toggleIcon.textContent = "▼";
+        row.classList.add("active-language-row");
+
         // Initialize sorting for file details table if not already initialized
-        const fileDetailsTable = fileDetailsRow.querySelector('.file-details-table');
-        if (fileDetailsTable && !fileDetailsTable.classList.contains('sort-initialized')) {
+        const fileDetailsTable = fileDetailsRow.querySelector(
+          ".file-details-table"
+        );
+        if (
+          fileDetailsTable &&
+          !fileDetailsTable.classList.contains("sort-initialized")
+        ) {
           initTableSort(fileDetailsTable);
-          fileDetailsTable.classList.add('sort-initialized');
+          fileDetailsTable.classList.add("sort-initialized");
         }
       }
     });
@@ -139,14 +162,16 @@ function setupLanguageRowToggles() {
 
 // Initialize and perform initial sort on main language table
 function initializeMainTableSort() {
-  const languageTable = document.getElementById('language-stats-table');
+  const languageTable = document.getElementById("language-stats-table");
   if (!languageTable) return;
-  
+
   // Initialize sorting
   initTableSort(languageTable);
-  
+
   // Find the Code column (usually the 3rd column, index 2)
-  const codeColumnHeader = languageTable.querySelector('th.sortable[data-sort="number"]:nth-child(3)');
+  const codeColumnHeader = languageTable.querySelector(
+    'th.sortable[data-sort="number"]:nth-child(3)'
+  );
   if (codeColumnHeader) {
     // Trigger a click on the Code column to sort initially
     // Using requestAnimationFrame instead of setTimeout for better performance
@@ -158,28 +183,30 @@ function initializeMainTableSort() {
 
 // Initialize table sorting functionality
 function initTableSort(table) {
-  const headers = table.querySelectorAll('th.sortable');
+  const headers = table.querySelectorAll("th.sortable");
   let currentSortColumn = null;
-  let currentSortDirection = 'desc'; // Default to descending order
+  let currentSortDirection = "desc"; // Default to descending order
 
   headers.forEach((header, index) => {
     // Header click event
-    header.addEventListener('click', () => {
+    header.addEventListener("click", () => {
       // Reverse sort direction if the same column is clicked again
       if (currentSortColumn === index) {
-        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
       } else {
-        currentSortDirection = 'desc'; // Start with descending when clicking a new column
+        currentSortDirection = "desc"; // Start with descending when clicking a new column
         currentSortColumn = index;
       }
 
       // Reset sort icon state
-      headers.forEach(h => {
-        h.classList.remove('sort-asc', 'sort-desc');
+      headers.forEach((h) => {
+        h.classList.remove("sort-asc", "sort-desc");
       });
 
       // Display current sort state
-      header.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+      header.classList.add(
+        currentSortDirection === "asc" ? "sort-asc" : "sort-desc"
+      );
 
       // Sort the table
       sortTable(table, index, currentSortDirection, header.dataset.sort);
@@ -189,24 +216,24 @@ function initTableSort(table) {
 
 // Compare cell values for sorting
 function compareValues(cellA, cellB, dataType) {
-  if (dataType === 'number') {
+  if (dataType === "number") {
     // Sort as numbers
-    const numA = parseFloat(cellA.replace(/,/g, '')) || 0;
-    const numB = parseFloat(cellB.replace(/,/g, '')) || 0;
+    const numA = parseFloat(cellA.replace(/,/g, "")) || 0;
+    const numB = parseFloat(cellB.replace(/,/g, "")) || 0;
     return numA - numB;
   } else {
     // Sort as strings
-    return cellA.localeCompare(cellB, 'ja');
+    return cellA.localeCompare(cellB, "ja");
   }
 }
 
 // Table sorting process
 function sortTable(table, columnIndex, direction, dataType) {
-  if (!table || !table.querySelector('tbody')) return;
-  
-  const tbody = table.querySelector('tbody');
-  const isMainTable = table.id === 'language-stats-table';
-  
+  if (!table || !table.querySelector("tbody")) return;
+
+  const tbody = table.querySelector("tbody");
+  const isMainTable = table.id === "language-stats-table";
+
   if (isMainTable) {
     // Sort main language table (with nested file details)
     sortMainTable(tbody, columnIndex, direction, dataType);
@@ -219,40 +246,42 @@ function sortTable(table, columnIndex, direction, dataType) {
 // Sort main language table with nested file details
 function sortMainTable(tbody, columnIndex, direction, dataType) {
   // Get all language rows
-  const languageRows = Array.from(tbody.querySelectorAll('tr.language-row'));
+  const languageRows = Array.from(tbody.querySelectorAll("tr.language-row"));
   if (languageRows.length === 0) return;
-  
+
   // Create a map of language rows and their associated detail rows
   const rowPairs = {};
-  languageRows.forEach(row => {
+  languageRows.forEach((row) => {
     const language = row.dataset.language;
-    const detailRow = tbody.querySelector(`.file-details-row[data-language="${language}"]`);
+    const detailRow = tbody.querySelector(
+      `.file-details-row[data-language="${language}"]`
+    );
     if (detailRow) {
       rowPairs[language] = { languageRow: row, detailRow: detailRow };
     }
   });
-  
+
   // Sort languages based on the selected column
   const sortedLanguages = Object.keys(rowPairs).sort((langA, langB) => {
     const rowA = rowPairs[langA].languageRow;
     const rowB = rowPairs[langB].languageRow;
-    
+
     const cellA = rowA.cells[columnIndex].textContent.trim();
     const cellB = rowB.cells[columnIndex].textContent.trim();
-    
+
     const comparison = compareValues(cellA, cellB, dataType);
-    
+
     // Apply sort direction
-    return direction === 'asc' ? comparison : -comparison;
+    return direction === "asc" ? comparison : -comparison;
   });
-  
+
   // Clear tbody
   while (tbody.firstChild) {
     tbody.removeChild(tbody.firstChild);
   }
-  
+
   // Append rows in sorted order, keeping language and detail rows together
-  sortedLanguages.forEach(language => {
+  sortedLanguages.forEach((language) => {
     const { languageRow, detailRow } = rowPairs[language];
     tbody.appendChild(languageRow);
     tbody.appendChild(detailRow);
@@ -262,27 +291,27 @@ function sortMainTable(tbody, columnIndex, direction, dataType) {
 // Sort file details table
 function sortDetailTable(tbody, columnIndex, direction, dataType) {
   // Get all rows
-  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const rows = Array.from(tbody.querySelectorAll("tr"));
   if (rows.length === 0) return;
-  
+
   // Sort rows
   const sortedRows = rows.sort((rowA, rowB) => {
     const cellA = rowA.cells[columnIndex].textContent.trim();
     const cellB = rowB.cells[columnIndex].textContent.trim();
-    
+
     const comparison = compareValues(cellA, cellB, dataType);
-    
+
     // Apply sort direction
-    return direction === 'asc' ? comparison : -comparison;
+    return direction === "asc" ? comparison : -comparison;
   });
-  
+
   // Clear tbody
   while (tbody.firstChild) {
     tbody.removeChild(tbody.firstChild);
   }
-  
+
   // Append sorted rows
-  sortedRows.forEach(row => {
+  sortedRows.forEach((row) => {
     tbody.appendChild(row);
   });
 }
