@@ -28,6 +28,10 @@ module Tokei::Api
     puts "Port: #{@@port}"
     puts "Environment: #{ENV["KEMAL_ENV"]? || "development"}"
 
+    # Cleanup old data on startup
+    deleted_count = Models::Analysis.cleanup_old_data
+    puts "Cleanup: Removed #{deleted_count} old analysis records"
+
     Kemal.run(port: @@port)
   end
 end
