@@ -1,4 +1,4 @@
-FROM crystallang/crystal:1.16.2-alpine
+FROM crystallang/crystal:1.16.3-alpine
 
 # Install required packages
 RUN apk add --no-cache git postgresql-client
