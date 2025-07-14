@@ -85,6 +85,11 @@ module Tokei::Api::Views::Contexts
       "https://gitdiagram.com/#{owner}/#{repo}"
     end
 
+    # Get DeepWiki server URL for GitHub repositories
+    def deepwiki_url(owner : String, repo : String) : String
+      "https://deepwiki.com/#{owner}/#{repo}"
+    end
+
     ECR.def_to_s "#{__DIR__}/../../views/result.ecr"
   end
 end
