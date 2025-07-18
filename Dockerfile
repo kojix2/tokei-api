@@ -1,33 +1,41 @@
-FROM crystallang/crystal:1.17.0-alpine
+# === Stage 1: Build tokei with Rust on Alpine 3.22 ===
+FROM rust:1-alpine AS tokei-builder
 
-# Install required packages
+RUN apk add --no-cache musl-dev
+
+RUN cargo install tokei
+
+
+# === Stage 2: Build Crystal app on Alpine 3.20 ===
+FROM crystallang/crystal:1-alpine AS crystal-builder
+
 RUN apk add --no-cache git postgresql-client
 
-# Install tokei
-RUN apk add --no-cache cargo && \
-    cargo install tokei && \
-    apk del cargo && \
-    mv /root/.cargo/bin/tokei /usr/local/bin/ && \
-    rm -rf /root/.cargo
-
-# Create application directory
 WORKDIR /app
 
-# Copy and install dependencies
 COPY shard.yml shard.lock ./
 RUN shards install --production
 
-# Copy source code
 COPY . .
+RUN crystal build --release src/tokei-api.cr -o /app/tokei-api
 
-# Build application
-RUN crystal build --release src/tokei-api.cr
 
-# Create temporary directory
+# === Final Stage: Minimal runtime ===
+FROM alpine:3
+
+RUN apk add --no-cache libpq
+
+WORKDIR /app
+
+# Copy compiled Crystal binary
+COPY --from=crystal-builder /app/tokei-api /app/tokei-api
+
+# Copy tokei binary built with newer Rust/Alpine
+COPY --from=tokei-builder /usr/local/cargo/bin/tokei /usr/local/bin/tokei
+
+# Create temp directory
 RUN mkdir -p /tmp/tokei-api
 
-# Expose port
 EXPOSE 3000
 
-# Run application
 CMD ["/app/tokei-api"]
