@@ -30,6 +30,9 @@ WORKDIR /app
 # Copy compiled Crystal binary
 COPY --from=crystal-builder /app/tokei-api /app/tokei-api
 
+# Copy static files (public directory)
+COPY --from=crystal-builder /app/public /app/public
+
 # Copy tokei binary built with newer Rust/Alpine
 COPY --from=tokei-builder /usr/local/cargo/bin/tokei /usr/local/bin/tokei
 
