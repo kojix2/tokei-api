@@ -49,7 +49,7 @@ window.addEventListener("pageshow", function (event) {
       if (submitBtn) {
         submitBtn.disabled = false;
         const initialLabel = submitBtn.getAttribute("data-initial-label") || "Analyze";
-        submitBtn.innerHTML = initialLabel;
+        submitBtn.textContent = initialLabel;
       }
     }
   }
