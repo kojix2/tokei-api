@@ -9,7 +9,7 @@
           <p class="lead mb-4">
             Get code statistics and badges for any Git repository using <a href="https://github.com/XAMPPRocky/tokei" target="_blank">tokei</a>.
           </p>
-          
+
           <div class="row justify-content-center mb-4">
             <div class="col-md-10">
               <form action="/analyses" method="post">
@@ -28,14 +28,14 @@
               </form>
             </div>
           </div>
-          
+
           <div class="text-center mb-3">
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/lines?url=https://github.com/kojix2/tokei-api") %>" alt="Lines of Code"></a>
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/language?url=https://github.com/kojix2/tokei-api") %>" alt="Top Language"></a>
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/languages?url=https://github.com/kojix2/tokei-api") %>" alt="Languages"></a>
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/ratio?url=https://github.com/kojix2/tokei-api") %>" alt="Code to Comment"></a>
           </div>
-              
+
           <div class="text-center">
             <p>For detailed information about badges, visit our <a href="/badges">badges documentation</a>.</p>
           </div>
@@ -52,18 +52,18 @@
         </div>
         <div class="card-body p-4">
           <p>You can directly access GitHub repositories using the following format:</p>
-          
+
           <pre class="bg-light p-3 rounded"><code><%= server_base_url %>/github/:owner/:repo</code></pre>
-          
+
           <p>For example, to analyze the Crystal language repository:</p>
-          
+
           <pre class="bg-light p-3 rounded"><code><%= server_base_url %>/github/kojix2/tokei-api</code></pre>
-          
+
           <p>This allows you to access analysis results directly without having to input the repository URL.</p>
         </div>
       </div>
     </div>
-    
+
     <div class="col-md-5 mb-4">
       <div class="card shadow-sm border-0 rounded-3 h-100">
         <div class="card-header py-3" style="background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%); color: white;">

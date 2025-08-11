@@ -8,7 +8,7 @@
         <p class="lead">
           tokei-api provides dynamic badges that you can add to your README or other documentation. These badges visually display code statistics.
         </p>
-        
+
         <h3>Available Badges</h3>
         <div class="row mb-4">
           <div class="col-md-6">
@@ -26,31 +26,31 @@
             <a href="https://tokei.kojix2.net/github/kojix2/tokei-api" target="_blank"><img src="https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/ratio?url=https://github.com/kojix2/tokei-api") %>" alt="Code to Comment"></a>
           </div>
         </div>
-        
+
         <h3>How to Use Badges</h3>
         <p>tokei-api provides badges for both GitHub repositories and any other Git repository. You can add these badges to your README or other documentation.</p>
-        
+
         <h4>For GitHub Repositories</h4>
         <p>To add badges for a GitHub repository, use the following markdown format:</p>
-        
+
         <pre class="bg-light p-3"><code>[![Lines of Code](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/owner/repo/lines") %>)](<%= server_base_url %>/github/owner/repo)</code></pre>
-        
+
         <p>For example, badges for this project (tokei-api):</p>
-        
+
         <pre class="bg-light p-3"><code>[![Lines of Code](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/lines") %>)](<%= server_base_url %>/github/kojix2/tokei-api)
 [![Top Language](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/language") %>)](<%= server_base_url %>/github/kojix2/tokei-api)
 [![Languages](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/languages") %>)](<%= server_base_url %>/github/kojix2/tokei-api)
 [![Code to Comment](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/badge/github/kojix2/tokei-api/ratio") %>)](<%= server_base_url %>/github/kojix2/tokei-api)</code></pre>
-        
+
         <h4>For Any Git Repository</h4>
         <p>For repositories hosted on other platforms (GitLab, Bitbucket, etc.), first analyze the repository using the form on the home page, then use the following markdown format:</p>
-        
+
         <pre class="bg-light p-3"><code>[![Lines of Code](https://img.shields.io/endpoint?url=<%= URI.encode_www_form("#{server_base_url}/api/badge/lines?url=https://example.com/user/repo.git") %>)](https://example.com/user/repo)</code></pre>
-        
+
         <p>Replace <code>https://example.com/user/repo.git</code> with your repository URL. You can use any of the badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, or <code>ratio</code>.</p>
-        
+
         <h3>Badge Types and Endpoints</h3>
-        
+
         <table class="table table-bordered">
           <thead>
             <tr>
@@ -87,25 +87,25 @@
             </tr>
           </tbody>
         </table>
-        
+
         <div class="alert alert-info mt-3">
           <small>
             <strong>Note:</strong> These badges are dynamic and will automatically reflect the latest analysis of your repository.
-            For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository 
+            For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository
             and want to update the badge data, you can run a new analysis after the cache period expires.
           </small>
         </div>
-        
+
         <h3>Integration with shields.io</h3>
         <p>
           tokei-api badges are compatible with <a href="https://shields.io/" target="_blank">shields.io</a> endpoint format.
           This allows for consistent styling with other badges you might be using in your documentation.
         </p>
-        
+
         <p>
           The badge endpoints return JSON in the following format:
         </p>
-        
+
         <pre class="bg-light p-3"><code>{
   "schemaVersion": 1,
   "label": "Lines of Code",

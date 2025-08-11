@@ -4,7 +4,7 @@
       <div class="card-header bg-success text-white">
         <div class="d-flex justify-content-between align-items-center">
             <h2 class="mb-0">
-              Analysis Results: 
+              Analysis Results:
               <a href="<%= analysis.repo_url %>" target="_blank" class="text-white">
               <%= analysis.repo_url %>
               </a>
@@ -49,7 +49,7 @@
             </a>
           </div>
         <% end %>
-        
+
         <div class="table-responsive">
           <table id="language-stats-table" class="table table-striped table-hover">
             <thead class="table-dark">
@@ -67,7 +67,7 @@
               <% total_code = 0 %>
               <% total_comments = 0 %>
               <% total_blanks = 0 %>
-              
+
               <% result_json.as_h.each do |language, stats| %>
                 <% next if language == "Total" %>
                 <% stats_obj = stats.as_h %>
@@ -75,12 +75,12 @@
                 <% code = stats_obj["code"]?.try(&.as_i) || 0 %>
                 <% comments = stats_obj["comments"]?.try(&.as_i) || 0 %>
                 <% blanks = stats_obj["blanks"]?.try(&.as_i) || 0 %>
-                
+
                 <% total_files += files %>
                 <% total_code += code %>
                 <% total_comments += comments %>
                 <% total_blanks += blanks %>
-                
+
                 <tr class="language-row" data-language="<%= language %>">
                   <td>
                     <div class="d-flex align-items-center">
@@ -163,11 +163,11 @@
           </div>
           <div class="card-body">
             <p>Add these badges to your README.md to showcase your code statistics:</p>
-            
+
             <%
               # Calculate values for badges
               total_lines = total_code + total_comments + total_blanks
-              
+
               # Format numbers for display (e.g., 1.2k for 1200)
               format_number = ->(num : Int32) {
                 if num >= 1_000_000
@@ -178,25 +178,25 @@
                   num.to_s
                 end
               }
-              
+
               # Get badge URLs and markdown using context methods
               total_lines_badge = badge_url(BadgeType::Lines)
               top_language_badge = badge_url(BadgeType::Language)
               language_count_badge = badge_url(BadgeType::Languages)
               code_comment_ratio_badge = badge_url(BadgeType::Ratio)
-              
+
               # Get markdown for badges
               total_lines_md = badge_markdown(BadgeType::Lines, "Lines of Code")
               top_language_md = badge_markdown(BadgeType::Language, "Top Language")
               language_count_md = badge_markdown(BadgeType::Languages, "Languages")
               code_comment_ratio_md = badge_markdown(BadgeType::Ratio, "Code to Comment")
-              
+
               # Get GitHub info if applicable
               github_info_tuple = github_info
               github_owner = github_info_tuple ? github_info_tuple[0] : ""
               github_repo = github_info_tuple ? github_info_tuple[1] : ""
             %>
-            
+
             <!-- Total Lines Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
@@ -214,7 +214,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Top Language Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
@@ -232,7 +232,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Language Count Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
@@ -250,7 +250,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Code to Comment Ratio Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
@@ -268,7 +268,7 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="alert alert-info mt-3">
               <small>
                 <strong>Note:</strong> These badges are dynamic and will automatically reflect the latest analysis of your repository.
@@ -281,7 +281,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="mt-4">
           <a href="/" class="btn btn-primary">Back to Home</a>
           <a href="/api/analyses/<%= analysis.id %>" class="btn btn-info" target="_blank">View as JSON</a>
@@ -296,23 +296,23 @@ document.addEventListener('DOMContentLoaded', function() {
   // Chart for lines of code by language
   const languageData = {};
   const resultJson = <%= analysis.result.to_json %>;
-  
+
   // データの準備
   Object.entries(resultJson).forEach(([language, stats]) => {
     if (language !== 'Total') {
       languageData[language] = stats.code || 0;
     }
   });
-  
+
   // Extract top 10 languages (by lines of code)
   const topLanguages = Object.entries(languageData)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
-  
+
   // Separate language names and line counts
   const languageNames = topLanguages.map(item => item[0]);
   const codeCounts = topLanguages.map(item => item[1]);
-  
+
   // Generate random colors
   const generateColors = (count) => {
     const colors = [];
@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     return colors;
   };
-  
+
   // Language chart
   const languageCtx = document.getElementById('languageChart').getContext('2d');
   new Chart(languageCtx, {
@@ -348,12 +348,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   });
-  
+
   // Code, comments, and blank lines ratio chart
   let totalCode = 0;
   let totalComments = 0;
   let totalBlanks = 0;
-  
+
   Object.values(resultJson).forEach(stats => {
     if (typeof stats === 'object') {
       totalCode += stats.code || 0;
@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
       totalBlanks += stats.blanks || 0;
     }
   });
-  
+
   const codeTypeCtx = document.getElementById('codeTypeChart').getContext('2d');
   new Chart(codeTypeCtx, {
     type: 'pie',

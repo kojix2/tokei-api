@@ -8,7 +8,7 @@
         <p class="lead">
           tokei-api provides a consistent RESTful API for analyzing code statistics in Git repositories.
         </p>
-        
+
         <h3>Core API</h3>
         <ul>
           <li><code>POST /api/analyses</code> - Analyze a repository</li>
@@ -21,20 +21,20 @@
             Available badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, <code>ratio</code>.
           </li>
         </ul>
-        
+
         <h3>GitHub-specific API</h3>
         <ul>
           <li><code>GET /api/github/:owner/:repo</code> - Analyze a GitHub repository</li>
           <li><code>GET /api/github/:owner/:repo/languages</code> - Get language statistics for a GitHub repository</li>
           <li><code>GET /api/github/:owner/:repo/badges/:type</code> - Get badge data for a GitHub repository</li>
         </ul>
-        
+
         <h3>Badge API</h3>
         <ul>
           <li><code>GET /badge/github/:owner/:repo/:type</code> - Simplified URL for retrieving badge data in shields.io compatible format</li>
         </ul>
         <p>Available badge types: <code>lines</code>, <code>language</code>, <code>languages</code>, <code>ratio</code></p>
-        
+
         <h3>Usage Examples</h3>
         <pre class="bg-light p-3"><code>
 // Analyze a repository
@@ -52,10 +52,10 @@ curl https://tokei.kojix2.net/api/github/kojix2/tokei-api
 // Retrieve badge data for any Git repository
 curl "https://tokei.kojix2.net/api/badge/lines?url=https://github.com/kojix2/tokei-api"
         </code></pre>
-        
+
         <h3>Response Format</h3>
         <p>All API endpoints return JSON responses. Here's an example response from <code>GET /api/github/:owner/:repo</code>:</p>
-        
+
         <pre class="bg-light p-3"><code>{
   "data": {
     "id": "12345678-1234-1234-1234-123456789012",
@@ -101,10 +101,10 @@ curl "https://tokei.kojix2.net/api/badge/lines?url=https://github.com/kojix2/tok
     }
   }
 }</code></pre>
-        
+
         <h3>Error Handling</h3>
         <p>In case of an error, the API returns an appropriate HTTP status code along with a JSON error response:</p>
-        
+
         <pre class="bg-light p-3"><code>{
   "error": {
     "code": "invalid_request",
@@ -112,10 +112,10 @@ curl "https://tokei.kojix2.net/api/badge/lines?url=https://github.com/kojix2/tok
     "status": 400
   }
 }</code></pre>
-        
+
         <div class="alert alert-info mt-3">
           <small>
-            <strong>Note:</strong> For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository 
+            <strong>Note:</strong> For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository
             and want to update the data, you can run a new analysis after the cache period expires.
           </small>
         </div>
