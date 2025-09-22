@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        ports: ["5432:5432"]
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tokei-api
+        options: >-
+          --health-cmd="pg_isready -U postgres" \
+          --health-interval=10s \
+          --health-timeout=5s \
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Install shards
+        run: shards install
+
+      - name: Prepare DB extensions
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d tokei-api -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+          psql -h localhost -U postgres -d tokei-api -c 'CREATE EXTENSION IF NOT EXISTS "pgcrypto";'
+
+      - name: Run specs
+        env:
+          DATABASE_PROVIDER: local
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tokei-api
+          CRYSTAL_ENV: test
+        run: crystal spec
