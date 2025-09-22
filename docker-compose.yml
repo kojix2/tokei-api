@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: .
-    command: sh -c "shards install && /app/tokei-api"
+    command: /app/tokei-api
     ports:
       - "3000:3000"
     environment:
