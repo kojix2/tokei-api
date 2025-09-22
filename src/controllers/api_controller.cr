@@ -1,62 +1,16 @@
 require "kemal"
 require "json"
 require "../services/tokei_service"
+require "../services/language_stats_service"
+require "../services/badge_service"
 require "../models/analysis"
 
 module Tokei::Api::Controllers
   # Controller for API
   module ApiController
-    # Format numbers for display (e.g., 1.2k for 1200)
-    private def self.format_number(num : Int32)
-      if num >= 1_000_000
-        "%.1fM" % (num / 1_000_000.0)
-      elsif num >= 1_000
-        "%.1fk" % (num / 1_000.0)
-      else
-        num.to_s
-      end
-    end
-
-    # Generate badge data based on type and analysis
+    # Badge data generation (via shared service)
     private def self.generate_badge_data(badge_type : String, analysis)
-      case badge_type
-      when "lines"
-        # Use stored total lines
-        {
-          schemaVersion: 1,
-          label:         "Lines of Code",
-          message:       format_number(analysis.total_lines || 0),
-          color:         "blue",
-        }
-      when "language"
-        # Use stored top language
-        {
-          schemaVersion: 1,
-          label:         "Top Language",
-          message:       analysis.top_language || "Unknown",
-          color:         "brightgreen",
-        }
-      when "languages"
-        # Use stored language count
-        {
-          schemaVersion: 1,
-          label:         "Languages",
-          message:       (analysis.language_count || 0).to_s,
-          color:         "orange",
-        }
-      when "ratio"
-        # Use stored code to comment ratio
-        ratio = analysis.code_comment_ratio || 0.0
-
-        {
-          schemaVersion: 1,
-          label:         "Code to Comment",
-          message:       "#{ratio.round(1)}:1",
-          color:         "blueviolet",
-        }
-      else
-        raise "Invalid badge type: #{badge_type}"
-      end
+      Tokei::Api::Services::BadgeService.generate(badge_type, analysis)
     end
 
     # Get the most recent analysis for a repository URL
@@ -280,26 +234,7 @@ module Tokei::Api::Controllers
             next {error: {code: "not_found", message: "Analysis not found", status: 404}}.to_json
           end
 
-          # Extract languages data from result
-          languages_data = {} of String => Hash(String, Int32)
-          result_json = analysis.result.as_h
-
-          result_json.each do |language, stats|
-            next if language == "Total"
-            stats_obj = stats.as_h
-
-            files = stats_obj["reports"]?.try(&.as_a.size) || stats_obj["files"]?.try(&.as_i) || 0
-            code = stats_obj["code"]?.try(&.as_i) || 0
-            comments = stats_obj["comments"]?.try(&.as_i) || 0
-            blanks = stats_obj["blanks"]?.try(&.as_i) || 0
-
-            languages_data[language.to_s] = {
-              "files"    => files.to_i,
-              "code"     => code.to_i,
-              "comments" => comments.to_i,
-              "blanks"   => blanks.to_i,
-            }
-          end
+          languages_data = Tokei::Api::Services::LanguageStatsService.extract_basic(analysis.result)
 
           # Prepare response data
           response_data = {
@@ -346,39 +281,7 @@ module Tokei::Api::Controllers
             next {error: {code: "not_found", message: "Analysis not found", status: 404}}.to_json
           end
 
-          # Extract languages data from result
-          languages_data = {} of String => Hash(String, Int32 | Float64)
-          result_json = analysis.result.as_h
-          total_code = 0
-
-          # First pass to calculate total code
-          result_json.each do |language, stats|
-            next if language == "Total"
-            stats_obj = stats.as_h
-            code = stats_obj["code"]?.try(&.as_i) || 0
-            total_code += code.to_i
-          end
-
-          # Second pass to build language data with percentages
-          result_json.each do |language, stats|
-            next if language == "Total"
-            stats_obj = stats.as_h
-
-            files = stats_obj["reports"]?.try(&.as_a.size) || stats_obj["files"]?.try(&.as_i) || 0
-            code = stats_obj["code"]?.try(&.as_i) || 0
-            comments = stats_obj["comments"]?.try(&.as_i) || 0
-            blanks = stats_obj["blanks"]?.try(&.as_i) || 0
-
-            percentage = total_code > 0 ? (code.to_i.to_f / total_code.to_f * 100).round(1) : 0.0
-
-            languages_data[language.to_s] = {
-              "files"      => files.to_i,
-              "code"       => code.to_i,
-              "comments"   => comments.to_i,
-              "blanks"     => blanks.to_i,
-              "percentage" => percentage,
-            }
-          end
+          languages_data = Tokei::Api::Services::LanguageStatsService.extract_with_percentage(analysis.result)
 
           # Prepare response data
           response_data = {
@@ -454,26 +357,7 @@ module Tokei::Api::Controllers
           # Get analysis
           analysis = get_analysis_for_repo(repo_url)
 
-          # Extract languages data from result
-          languages_data = {} of String => Hash(String, Int32)
-          result_json = analysis.result.as_h
-
-          result_json.each do |language, stats|
-            next if language == "Total"
-            stats_obj = stats.as_h
-
-            files = stats_obj["reports"]?.try(&.as_a.size) || stats_obj["files"]?.try(&.as_i) || 0
-            code = stats_obj["code"]?.try(&.as_i) || 0
-            comments = stats_obj["comments"]?.try(&.as_i) || 0
-            blanks = stats_obj["blanks"]?.try(&.as_i) || 0
-
-            languages_data[language.to_s] = {
-              "files"    => files.to_i,
-              "code"     => code.to_i,
-              "comments" => comments.to_i,
-              "blanks"   => blanks.to_i,
-            }
-          end
+          languages_data = Tokei::Api::Services::LanguageStatsService.extract_basic(analysis.result)
 
           # Prepare response data
           response_data = {
@@ -528,39 +412,7 @@ module Tokei::Api::Controllers
           # Get analysis
           analysis = get_analysis_for_repo(repo_url)
 
-          # Extract languages data from result
-          languages_data = {} of String => Hash(String, Int32 | Float64)
-          result_json = analysis.result.as_h
-          total_code = 0
-
-          # First pass to calculate total code
-          result_json.each do |language, stats|
-            next if language == "Total"
-            stats_obj = stats.as_h
-            code = stats_obj["code"]?.try(&.as_i) || 0
-            total_code += code.to_i
-          end
-
-          # Second pass to build language data with percentages
-          result_json.each do |language, stats|
-            next if language == "Total"
-            stats_obj = stats.as_h
-
-            files = stats_obj["reports"]?.try(&.as_a.size) || stats_obj["files"]?.try(&.as_i) || 0
-            code = stats_obj["code"]?.try(&.as_i) || 0
-            comments = stats_obj["comments"]?.try(&.as_i) || 0
-            blanks = stats_obj["blanks"]?.try(&.as_i) || 0
-
-            percentage = total_code > 0 ? (code.to_i.to_f / total_code.to_f * 100).round(1) : 0.0
-
-            languages_data[language.to_s] = {
-              "files"      => files.to_i,
-              "code"       => code.to_i,
-              "comments"   => comments.to_i,
-              "blanks"     => blanks.to_i,
-              "percentage" => percentage,
-            }
-          end
+          languages_data = Tokei::Api::Services::LanguageStatsService.extract_with_percentage(analysis.result)
 
           # Prepare response data
           response_data = {

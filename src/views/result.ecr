@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const languageData = {};
   const resultJson = <%= analysis.result.to_json %>;
 
-  // データの準備
+  // Prepare data
   Object.entries(resultJson).forEach(([language, stats]) => {
     if (language !== 'Total') {
       languageData[language] = stats.code || 0;
