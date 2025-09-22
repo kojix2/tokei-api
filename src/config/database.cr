@@ -46,7 +46,7 @@ module Tokei::Api::Config
       begin
         # Create analyses table if it doesn't exist (execute SQL commands separately)
         conn.exec "CREATE TABLE IF NOT EXISTS analyses (
-          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           repo_url TEXT NOT NULL,
           analyzed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           result JSONB NOT NULL,
