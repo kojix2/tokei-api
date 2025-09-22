@@ -82,6 +82,7 @@ Available badge types: `lines`, `language`, `languages`, `ratio`
    ```
 
    Key environment variables:
+
    - `DATABASE_URL`: PostgreSQL connection string
    - `DATABASE_PROVIDER`: Database provider (local or neon)
    - `TEMP_DIR`: Directory for temporary git clones

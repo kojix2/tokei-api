@@ -8,7 +8,7 @@ targets:
   tokei-api:
     main: src/tokei-api.cr
 
-crystal: '>= 1.15.1'
+crystal: ">= 1.15.1"
 
 dependencies:
   kemal:
