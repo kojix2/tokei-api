@@ -91,7 +91,10 @@ module Tokei::Api::Controllers
         begin
           # Get badge type and repository URL
           badge_type = env.params.url["type"]
-          repo_url = env.params.query["url"]
+          # NOTE: query param may be missing
+          repo_url = env.params.query["url"]? || ""
+
+          env.response.content_type = "application/json"
 
           # URL validation
           unless Tokei::Api::Services::TokeiService.valid_repo_url?(repo_url)
@@ -104,7 +107,7 @@ module Tokei::Api::Controllers
             }.to_json
           end
 
-          # Search for existing analysis results
+          # Search for existing analysis results (badge endpoint does not trigger analysis)
           existing_analyses = Tokei::Api::Models::Analysis.find_by_repo_url(repo_url)
 
           # Check if we have any analysis results
@@ -399,6 +402,8 @@ module Tokei::Api::Controllers
           id = env.params.url["id"]
           badge_type = env.params.url["type"]
 
+          env.response.content_type = "application/json"
+
           analysis = Tokei::Api::Models::Analysis.find(id)
 
           if analysis.nil?
@@ -590,6 +595,7 @@ module Tokei::Api::Controllers
 
           # Generate badge data
           begin
+            env.response.content_type = "application/json"
             badge_data = generate_badge_data(badge_type, analysis)
             badge_data.to_json
           rescue ex
@@ -629,6 +635,7 @@ module Tokei::Api::Controllers
 
           # Generate badge data
           begin
+            env.response.content_type = "application/json"
             badge_data = generate_badge_data(badge_type, analysis)
             badge_data.to_json
           rescue ex
