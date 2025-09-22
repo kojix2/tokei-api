@@ -6,7 +6,7 @@ authors:
 
 targets:
   tokei-api:
-    main: src/tokei-api.cr
+    main: src/main.cr
 
 crystal: ">= 1.15.1"
 

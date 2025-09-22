@@ -35,6 +35,3 @@ module Tokei::Api
     Kemal.run(port: @@port)
   end
 end
-
-# Start application
-Tokei::Api.start

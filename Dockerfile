@@ -17,7 +17,7 @@ COPY shard.yml shard.lock ./
 RUN shards install --production
 
 COPY . .
-RUN crystal build --release src/tokei-api.cr -o /app/tokei-api
+RUN crystal build --release src/main.cr -o /app/tokei-api
 
 
 # === Final Stage: Minimal runtime ===
