@@ -247,13 +247,14 @@ body {
 }
 
 .table-dark {
-  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   color: white;
 }
 
 .table-dark th {
-  color: white;
+  color: rgba(255, 255, 255, 0.95);
   font-weight: 600;
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .table-striped tbody tr:nth-of-type(odd) {
@@ -307,7 +308,7 @@ pre {
   border-radius: var(--radius-lg);
   max-height: 400px;
   overflow-y: auto;
-  background-color: var(--color-bg-secondary);
+  background-color: #f8f9fa;
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-inset);
 }
@@ -319,6 +320,13 @@ code {
   background-color: rgba(99, 102, 241, 0.08);
   padding: 2px 6px;
   border-radius: 3px;
+}
+
+/* Inline code in pre blocks should not have background */
+pre code {
+  background-color: transparent;
+  padding: 0;
+  color: #1f2937;
 }
 
 /* Footer */
