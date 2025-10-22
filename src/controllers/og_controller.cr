@@ -20,47 +20,43 @@ module Tokei::Api::Controllers
       "rsvg-convert"
     end
 
+    # Content negotiation helper: query param > Accept header > default png
+    def self.wants_svg?(env : HTTP::Server::Context) : Bool
+      fmt = env.params.query["format"]?
+      return true  if fmt && fmt.downcase == "svg"
+      return false if fmt && fmt.downcase == "png"
+      accept = env.request.headers["Accept"]?
+      !!(accept && accept.includes?("image/svg+xml"))
+    end
+
     def self.setup
-      # SVG: debug/preview
-      get "/og/github/:owner/:repo.svg" do |env|
+      # Unified route without extension; use ?format=svg|png or Accept header
+      get "/og/github/:owner/:repo" do |env|
         owner = env.params.url["owner"]
-        repo = env.params.url["repo"]
+        repo  = env.params.url["repo"]
         halt env, status_code: 400, response: "invalid owner" unless owner.matches?(SAFE)
-        halt env, status_code: 400, response: "invalid repo" unless repo.matches?(SAFE)
+        halt env, status_code: 400, response: "invalid repo"  unless repo.matches?(SAFE)
 
         url = "https://github.com/#{owner}/#{repo}"
         begin
           json = Tokei::Api::Services::TokeiService.analyze_repo(url)
-          svg = Tokei::Api::Services::OgImageService.generate_svg(owner, repo, json)
-          env.response.content_type = "image/svg+xml; charset=utf-8"
-          svg
-        rescue ex
-          env.response.status_code = 500
-          "failed: #{ex.message}"
-        end
-      end
+          svg  = Tokei::Api::Services::OgImageService.generate_svg(owner, repo, json)
 
-      # PNG: OGP main (cached)
-      get "/og/github/:owner/:repo.png" do |env|
-        owner = env.params.url["owner"]
-        repo = env.params.url["repo"]
-        halt env, status_code: 400, response: "invalid owner" unless owner.matches?(SAFE)
-        halt env, status_code: 400, response: "invalid repo" unless repo.matches?(SAFE)
-
-        cache = File.join(cache_dir, "#{owner}--#{repo}.png")
-        if File.exists?(cache)
-          mtime = File.info(cache).modification_time
-          if (Time.utc - mtime) <= CACHE_TTL.seconds
-            env.response.content_type = "image/png"
-            env.response.headers["Cache-Control"] = "public, max-age=86400"
-            next File.read(cache).to_slice
+          if wants_svg?(env)
+            env.response.content_type = "image/svg+xml; charset=utf-8"
+            next svg
           end
-        end
 
-        url = "https://github.com/#{owner}/#{repo}"
-        begin
-          json = Tokei::Api::Services::TokeiService.analyze_repo(url)
-          svg = Tokei::Api::Services::OgImageService.generate_svg(owner, repo, json)
+          # PNG path (cached)
+          cache = File.join(cache_dir, "#{owner}--#{repo}.png")
+          if File.exists?(cache)
+            mtime = File.info(cache).modification_time
+            if (Time.utc - mtime) <= CACHE_TTL.seconds
+              env.response.content_type = "image/png"
+              env.response.headers["Cache-Control"] = "public, max-age=86400"
+              next File.read(cache).to_slice
+            end
+          end
 
           tmp_svg = File.join(Tokei::Api::Services::TokeiService::TEMP_DIR_BASE, "og-#{Random::Secure.hex(8)}.svg")
           tmp_png = File.join(Tokei::Api::Services::TokeiService::TEMP_DIR_BASE, "og-#{Random::Secure.hex(8)}.png")

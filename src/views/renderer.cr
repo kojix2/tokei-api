@@ -23,13 +23,13 @@ module Tokei::Api::Views
 
       # Build OG/Twitter meta tags for social preview
       base = result_context.server_base_url
-      # point to lightweight SVG->PNG route (GitHub style if possible)
+      # point to unified OG route (extensionless); force PNG via format param
       og_image = if result_context.is_github_repo? && (info = result_context.github_info)
                    owner, repo = info
-                   "#{base}/og/github/#{owner}/#{repo}.png"
+                   "#{base}/og/github/#{owner}/#{repo}?format=png"
                  else
                    # fallback: still point to analysis-based PNG if later implemented; for now use GitHub route if applicable only
-                   "#{base}/og/github/preview.png"
+                   "#{base}/og/github/preview?format=png"
                  end
       og_url = "#{base}/analyses/#{analysis.id}"
 
