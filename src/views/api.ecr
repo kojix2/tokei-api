@@ -41,16 +41,16 @@
 curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"url":"https://github.com/kojix2/tokei-api"}' \
-  https://tokei.kojix2.net/api/analyses
+  <%= server_base_url %>/api/analyses
 
 // Retrieve cached analysis result
-curl "https://tokei.kojix2.net/api/analyses?url=https://github.com/kojix2/tokei-api"
+curl "<%= server_base_url %>/api/analyses?url=https://github.com/kojix2/tokei-api"
 
 // Analyze a GitHub repository directly
-curl https://tokei.kojix2.net/api/github/kojix2/tokei-api
+curl <%= server_base_url %>/api/github/kojix2/tokei-api
 
 // Retrieve badge data for any Git repository
-curl "https://tokei.kojix2.net/api/badge/lines?url=https://github.com/kojix2/tokei-api"
+curl "<%= server_base_url %>/api/badge/lines?url=https://github.com/kojix2/tokei-api"
         </code></pre>
 
         <h3>Response Format</h3>
