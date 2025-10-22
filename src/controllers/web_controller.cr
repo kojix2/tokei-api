@@ -2,10 +2,24 @@ require "kemal"
 require "../services/tokei_service"
 require "../models/analysis"
 require "../views/renderer"
+require "../views/contexts/layout_context"
 
 module Tokei::Api::Controllers
   # Controller for Web
   module WebController
+    # Detect common social preview bots (Twitter, Facebook, LinkedIn, Slack, Discord, etc.)
+    private def self.social_bot?(ua : String?) : Bool
+      return false unless ua
+      !!(ua =~ /Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Mastodon|Line|iMessage/i)
+    end
+
+    # Build absolute base URL based on headers or ENV
+    private def self.base_url(env : HTTP::Server::Context) : String
+      return ENV["BASE_URL"] if ENV["BASE_URL"]?
+      scheme = env.request.headers["X-Forwarded-Proto"]? || ENV["DEFAULT_SCHEME"]? || "https"
+      host   = env.request.headers["X-Forwarded-Host"]? || env.request.host_with_port
+      "#{scheme}://#{host}"
+    end
     # Process analyze request (common logic for GET and POST)
     private def self.process_analyze_request(env, repo_url)
       # URL validation
@@ -118,12 +132,41 @@ module Tokei::Api::Controllers
         env.redirect "/"
       end
 
-      # GET /github/:owner/:repo endpoint (direct GitHub repository analysis)
+      # GET /github/:owner/:repo endpoint
+      # - Social bots: return minimal HTML with OG tags (no redirect)
+      # - Humans: run analysis then redirect to /analyses/:id
       get "/github/:owner/:repo" do |env|
-        begin
-          owner = env.params.url["owner"]
-          repo = env.params.url["repo"]
+        owner = env.params.url["owner"]
+        repo  = env.params.url["repo"]
 
+        if social_bot?(env.request.headers["User-Agent"]?)
+          base  = base_url(env)
+          image = "#{base}/og/github/#{owner}/#{repo}?format=png"
+
+          meta = String.build do |io|
+            io << %(<meta property="og:type" content="website">)
+            io << %(<meta property="og:title" content="#{owner}/#{repo}">)
+            io << %(<meta property="og:description" content="Language breakdown by tokei">)
+            io << %(<meta property="og:url" content="#{base}/github/#{owner}/#{repo}">)
+            io << %(<meta property="og:image" content="#{image}">)
+            io << %(<meta property="og:image:width" content="1200">)
+            io << %(<meta property="og:image:height" content="630">)
+            io << %(<meta name="twitter:card" content="summary_large_image">)
+          end
+
+          body = String.build do |io|
+            io << %(<h1>#{owner}/#{repo}</h1>)
+            io << %(<p>Share this URL on social networks to show a bar chart preview.</p>)
+            io << %(<img src="#{image}" alt="OG Preview" width="600" height="315">)
+          end
+
+          html = Tokei::Api::Views::Contexts::LayoutContext.new(body, nil, meta).to_s
+          env.response.content_type = "text/html; charset=utf-8"
+          next html
+        end
+
+        # Fallback for regular browsers: perform analysis and redirect
+        begin
           process_github_analyze_request(env, owner, repo)
         rescue ex
           env.response.status_code = 500
