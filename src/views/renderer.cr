@@ -4,6 +4,7 @@ require "./contexts/error_context"
 require "./contexts/layout_context"
 require "./contexts/api_context"
 require "./contexts/badges_context"
+require "uri"
 
 module Tokei::Api::Views
   # Rendering helper
@@ -28,8 +29,8 @@ module Tokei::Api::Views
                    owner, repo = info
                    "#{base}/og/github/#{owner}/#{repo}?format=png"
                  else
-                   # fallback: still point to analysis-based PNG if later implemented; for now use GitHub route if applicable only
-                   "#{base}/og/github/preview?format=png"
+                   url = URI.encode_www_form(result_context.analysis.repo_url)
+                   "#{base}/og?format=png&url=#{url}"
                  end
       og_url = "#{base}/analyses/#{analysis.id}"
 
