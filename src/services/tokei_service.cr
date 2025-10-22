@@ -11,8 +11,8 @@ module Tokei::Api::Services
 
     # Git configuration
     ENV["GIT_TERMINAL_PROMPT"] ||= "0"
-    ENV["GIT_ASKPASS"]         ||= "/bin/true"
-    ENV["GIT_SSH_COMMAND"]     ||= "ssh -o BatchMode=yes"
+    ENV["GIT_ASKPASS"] ||= "/bin/true"
+    ENV["GIT_SSH_COMMAND"] ||= "ssh -o BatchMode=yes"
 
     # Base path for temporary directory
     TEMP_DIR_BASE = ENV["TEMP_DIR"]? || "/tmp/tokei-api"

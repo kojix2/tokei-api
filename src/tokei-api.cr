@@ -4,6 +4,7 @@ require "./config/database"
 require "./models/analysis"
 require "./controllers/api_controller"
 require "./controllers/web_controller"
+require "./controllers/og_controller"
 
 # tokei-api - API for analyzing Git repository source code with tokei command
 module Tokei::Api
@@ -21,6 +22,7 @@ module Tokei::Api
   # Controller setup
   Controllers::ApiController.setup
   Controllers::WebController.setup
+  Controllers::OgController.setup
 
   # Start application
   def self.start
