@@ -23,7 +23,7 @@ module Tokei::Api::Controllers
     # Content negotiation helper: query param > Accept header > default png
     def self.wants_svg?(env : HTTP::Server::Context) : Bool
       fmt = env.params.query["format"]?
-      return true  if fmt && fmt.downcase == "svg"
+      return true if fmt && fmt.downcase == "svg"
       return false if fmt && fmt.downcase == "png"
       accept = env.request.headers["Accept"]?
       !!(accept && accept.includes?("image/svg+xml"))
@@ -35,7 +35,7 @@ module Tokei::Api::Controllers
 
     private def self.serve_og(env : HTTP::Server::Context, cache_key : String, owner : String, repo : String, repo_url : String)
       json = Tokei::Api::Services::TokeiService.analyze_repo(repo_url)
-      svg  = Tokei::Api::Services::OgImageService.generate_svg(owner, repo, json)
+      svg = Tokei::Api::Services::OgImageService.generate_svg(owner, repo, json)
 
       if wants_svg?(env)
         env.response.content_type = "image/svg+xml; charset=utf-8"
@@ -76,9 +76,9 @@ module Tokei::Api::Controllers
       # Unified GitHub route (no extension)
       get "/og/github/:owner/:repo" do |env|
         owner = env.params.url["owner"]
-        repo  = env.params.url["repo"]
+        repo = env.params.url["repo"]
         halt env, status_code: 400, response: "invalid owner" unless owner.matches?(SAFE)
-        halt env, status_code: 400, response: "invalid repo"  unless repo.matches?(SAFE)
+        halt env, status_code: 400, response: "invalid repo" unless repo.matches?(SAFE)
         url = "https://github.com/#{owner}/#{repo}"
         serve_og(env, "#{owner}--#{repo}", owner, repo, url)
       end
@@ -92,7 +92,7 @@ module Tokei::Api::Controllers
         end
         owner_repo = Tokei::Api::Services::TokeiService.extract_github_info(repo_url)
         owner = owner_repo ? owner_repo[0] : "repo"
-        repo  = owner_repo ? owner_repo[1] : "analysis"
+        repo = owner_repo ? owner_repo[1] : "analysis"
         cache_key = sanitize_cache_key(repo_url)
         serve_og(env, cache_key, owner, repo, repo_url)
       end
