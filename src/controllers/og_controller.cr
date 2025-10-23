@@ -39,6 +39,8 @@ module Tokei::Api::Controllers
 
       if wants_svg?(env)
         env.response.content_type = "image/svg+xml; charset=utf-8"
+        env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
+        env.response.headers["Vary"] = "Accept"
         return svg
       end
 
@@ -47,7 +49,8 @@ module Tokei::Api::Controllers
         mtime = File.info(cache).modification_time
         if (Time.utc - mtime) <= CACHE_TTL.seconds
           env.response.content_type = "image/png"
-          env.response.headers["Cache-Control"] = "public, max-age=86400"
+          env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
+          env.response.headers["Vary"] = "Accept"
           bytes = File.open(cache, "rb") { |f| f.getb_to_end }
           env.response.content_length = bytes.size
           env.response.write bytes
@@ -75,7 +78,8 @@ module Tokei::Api::Controllers
       FileUtils.rm_rf(tmp_svg)
 
       env.response.content_type = "image/png"
-      env.response.headers["Cache-Control"] = "public, max-age=86400"
+      env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
+      env.response.headers["Vary"] = "Accept"
       bytes = File.open(cache, "rb") { |f| f.getb_to_end }
       env.response.content_length = bytes.size
       env.response.write bytes
