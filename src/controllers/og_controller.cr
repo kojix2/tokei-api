@@ -55,9 +55,15 @@ module Tokei::Api::Controllers
       tmp_svg = File.join(Tokei::Api::Services::TokeiService::TEMP_DIR_BASE, "og-#{Random::Secure.hex(8)}.svg")
       tmp_png = File.join(Tokei::Api::Services::TokeiService::TEMP_DIR_BASE, "og-#{Random::Secure.hex(8)}.png")
       File.write(tmp_svg, svg)
-      cmd = "#{rsvg_path} -w 1200 -h 630 \"#{tmp_svg}\" -o \"#{tmp_png}\""
-      ok = system(cmd)
-      unless ok && File.exists?(tmp_png) && File.size(tmp_png) > 0
+      
+      result = Process.run(rsvg_path, ["-w", "1200", "-h", "630", tmp_svg, "-o", tmp_png], 
+                          output: Process::Redirect::Inherit, 
+                          error: Process::Redirect::Inherit)
+      
+      unless result.success? && File.exists?(tmp_png) && File.size(tmp_png) > 0
+        puts "ERROR: rsvg-convert failed: exit_code=#{result.exit_code}"
+        puts "  tmp_svg exists: #{File.exists?(tmp_svg)}, size: #{File.exists?(tmp_svg) ? File.size(tmp_svg) : 0}"
+        puts "  tmp_png exists: #{File.exists?(tmp_png)}, size: #{File.exists?(tmp_png) ? File.size(tmp_png) : 0}"
         FileUtils.rm_rf(tmp_svg)
         FileUtils.rm_rf(tmp_png)
         env.response.status_code = 500
