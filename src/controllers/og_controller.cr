@@ -48,7 +48,17 @@ module Tokei::Api::Controllers
         if (Time.utc - mtime) <= CACHE_TTL.seconds
           env.response.content_type = "image/png"
           env.response.headers["Cache-Control"] = "public, max-age=86400"
+<<<<<<< HEAD
           return File.read(cache).to_slice
+||||||| parent of e94a747 (Fix cache reading method to use binary mode for PNG files)
+          return File.read(cache).to_slice
+        else
+          puts "DEBUG: Cache expired"
+=======
+          return File.open(cache, "rb") { |f| f.getb_to_end }
+        else
+          puts "DEBUG: Cache expired"
+>>>>>>> e94a747 (Fix cache reading method to use binary mode for PNG files)
         end
       end
 
@@ -76,7 +86,12 @@ module Tokei::Api::Controllers
 
       env.response.content_type = "image/png"
       env.response.headers["Cache-Control"] = "public, max-age=86400"
-      File.read(cache).to_slice
+      
+      File.open(cache, "rb") do |file|
+        bytes = file.getb_to_end
+        puts "DEBUG: Actually returning #{bytes.size} bytes"
+        bytes
+      end
     end
 
     def self.setup
