@@ -48,7 +48,10 @@ module Tokei::Api::Controllers
         if (Time.utc - mtime) <= CACHE_TTL.seconds
           env.response.content_type = "image/png"
           env.response.headers["Cache-Control"] = "public, max-age=86400"
-          return File.open(cache, "rb") { |f| f.getb_to_end }
+          bytes = File.open(cache, "rb") { |f| f.getb_to_end }
+          env.response.content_length = bytes.size
+          env.response.write bytes
+          return ""
         end
       end
 
@@ -66,14 +69,17 @@ module Tokei::Api::Controllers
         env.response.status_code = 500
         return "failed to render png"
       end
-      
+
       FileUtils.mkdir_p(File.dirname(cache)) unless Dir.exists?(File.dirname(cache))
       FileUtils.mv(tmp_png, cache)
       FileUtils.rm_rf(tmp_svg)
 
       env.response.content_type = "image/png"
       env.response.headers["Cache-Control"] = "public, max-age=86400"
-      File.open(cache, "rb") { |f| f.getb_to_end }
+      bytes = File.open(cache, "rb") { |f| f.getb_to_end }
+      env.response.content_length = bytes.size
+      env.response.write bytes
+      return ""
     end
 
     def self.setup
