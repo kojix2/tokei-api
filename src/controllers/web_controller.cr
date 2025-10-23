@@ -17,9 +17,10 @@ module Tokei::Api::Controllers
     private def self.base_url(env : HTTP::Server::Context) : String
       return ENV["BASE_URL"] if ENV["BASE_URL"]?
       scheme = env.request.headers["X-Forwarded-Proto"]? || ENV["DEFAULT_SCHEME"]? || "https"
-      host   = env.request.headers["X-Forwarded-Host"]? || env.request.host_with_port
+      host = env.request.headers["X-Forwarded-Host"]? || env.request.host_with_port
       "#{scheme}://#{host}"
     end
+
     # Process analyze request (common logic for GET and POST)
     private def self.process_analyze_request(env, repo_url)
       # URL validation
@@ -137,10 +138,10 @@ module Tokei::Api::Controllers
       # - Humans: run analysis then redirect to /analyses/:id
       get "/github/:owner/:repo" do |env|
         owner = env.params.url["owner"]
-        repo  = env.params.url["repo"]
+        repo = env.params.url["repo"]
 
         if social_bot?(env.request.headers["User-Agent"]?)
-          base  = base_url(env)
+          base = base_url(env)
           image = "#{base}/og/github/#{owner}/#{repo}?format=png"
 
           meta = String.build do |io|
