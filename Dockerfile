@@ -24,7 +24,7 @@ RUN crystal build --release src/main.cr -o /app/tokei-api
 FROM alpine:3
 
 RUN apk add --no-cache git libpq libgcc libgc++ pcre2 \
-	librsvg fontconfig freetype ttf-dejavu
+	rsvg-convert fontconfig freetype ttf-dejavu
 
 WORKDIR /app
 
