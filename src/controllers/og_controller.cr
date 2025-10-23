@@ -60,10 +60,11 @@ module Tokei::Api::Controllers
                           output: Process::Redirect::Inherit, 
                           error: Process::Redirect::Inherit)
       
-      unless result.success? && File.exists?(tmp_png) && File.size(tmp_png) > 0
-        puts "ERROR: rsvg-convert failed: exit_code=#{result.exit_code}"
-        puts "  tmp_svg exists: #{File.exists?(tmp_svg)}, size: #{File.exists?(tmp_svg) ? File.size(tmp_svg) : 0}"
-        puts "  tmp_png exists: #{File.exists?(tmp_png)}, size: #{File.exists?(tmp_png) ? File.size(tmp_png) : 0}"
+      png_exists = File.exists?(tmp_png)
+      png_size = png_exists ? File.size(tmp_png) : 0
+      puts "rsvg-convert: success=#{result.success?}, png_exists=#{png_exists}, png_size=#{png_size}"
+      
+      unless result.success? && png_exists && png_size > 0
         FileUtils.rm_rf(tmp_svg)
         FileUtils.rm_rf(tmp_png)
         env.response.status_code = 500
