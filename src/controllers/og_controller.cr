@@ -48,50 +48,32 @@ module Tokei::Api::Controllers
         if (Time.utc - mtime) <= CACHE_TTL.seconds
           env.response.content_type = "image/png"
           env.response.headers["Cache-Control"] = "public, max-age=86400"
-<<<<<<< HEAD
-          return File.read(cache).to_slice
-||||||| parent of e94a747 (Fix cache reading method to use binary mode for PNG files)
-          return File.read(cache).to_slice
-        else
-          puts "DEBUG: Cache expired"
-=======
           return File.open(cache, "rb") { |f| f.getb_to_end }
-        else
-          puts "DEBUG: Cache expired"
->>>>>>> e94a747 (Fix cache reading method to use binary mode for PNG files)
         end
       end
 
       tmp_svg = File.join(Tokei::Api::Services::TokeiService::TEMP_DIR_BASE, "og-#{Random::Secure.hex(8)}.svg")
       tmp_png = File.join(Tokei::Api::Services::TokeiService::TEMP_DIR_BASE, "og-#{Random::Secure.hex(8)}.png")
       File.write(tmp_svg, svg)
-      
-      result = Process.run(rsvg_path, ["-w", "1200", "-h", "630", tmp_svg, "-o", tmp_png], 
-                          output: Process::Redirect::Inherit, 
-                          error: Process::Redirect::Inherit)
-      
-      png_exists = File.exists?(tmp_png)
-      png_size = png_exists ? File.size(tmp_png) : 0
-      puts "rsvg-convert: success=#{result.success?}, png_exists=#{png_exists}, png_size=#{png_size}"
-      
-      unless result.success? && png_exists && png_size > 0
+
+      result = Process.run(rsvg_path, ["-w", "1200", "-h", "630", tmp_svg, "-o", tmp_png],
+        output: Process::Redirect::Inherit,
+        error: Process::Redirect::Inherit)
+
+      unless result.success? && File.exists?(tmp_png) && File.size(tmp_png) > 0
         FileUtils.rm_rf(tmp_svg)
         FileUtils.rm_rf(tmp_png)
         env.response.status_code = 500
         return "failed to render png"
       end
+      
       FileUtils.mkdir_p(File.dirname(cache)) unless Dir.exists?(File.dirname(cache))
       FileUtils.mv(tmp_png, cache)
       FileUtils.rm_rf(tmp_svg)
 
       env.response.content_type = "image/png"
       env.response.headers["Cache-Control"] = "public, max-age=86400"
-      
-      File.open(cache, "rb") do |file|
-        bytes = file.getb_to_end
-        puts "DEBUG: Actually returning #{bytes.size} bytes"
-        bytes
-      end
+      File.open(cache, "rb") { |f| f.getb_to_end }
     end
 
     def self.setup
