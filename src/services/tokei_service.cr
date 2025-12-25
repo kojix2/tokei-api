@@ -89,12 +89,17 @@ module Tokei::Api::Services
         FileUtils.mkdir_p(TEMP_DIR_BASE) unless Dir.exists?(TEMP_DIR_BASE)
 
         # Clone repository with timeout and single-branch options
-        clone_command = "timeout #{CLONE_TIMEOUT}s git clone --depth 1 --single-branch #{repo_url} #{temp_dir}"
-        clone_result = system(clone_command)
+        # Use Process.run for safety (no shell interpretation)
+        clone_result = Process.run(
+          "timeout",
+          ["#{CLONE_TIMEOUT}s", "git", "clone", "--depth", "1", "--single-branch", repo_url, temp_dir],
+          output: Process::Redirect::Close,
+          error: Process::Redirect::Close
+        )
 
-        unless clone_result
+        unless clone_result.success?
           # Check if the failure was due to timeout
-          if $?.exit_code == 124
+          if clone_result.exit_code == 124
             raise "Repository cloning timed out after #{CLONE_TIMEOUT} seconds. The repository may be too large."
           else
             raise "Failed to clone repository: #{repo_url}. Please check the URL and try again."
@@ -102,14 +107,26 @@ module Tokei::Api::Services
         end
 
         # Execute tokei command
-        tokei_command = "cd #{temp_dir} && tokei --output json"
-        output = `#{tokei_command}`
+        # Use Process.run for safety (no shell interpretation)
+        output = IO::Memory.new
+        tokei_result = Process.run(
+          "tokei",
+          ["--output", "json"],
+          chdir: temp_dir,
+          output: output,
+          error: Process::Redirect::Close
+        )
 
-        if output.empty?
+        unless tokei_result.success?
           raise "Failed to analyze repository with tokei"
         end
 
-        return output
+        output_string = output.to_s
+        if output_string.empty?
+          raise "Failed to analyze repository with tokei"
+        end
+
+        return output_string
       ensure
         # Remove temporary directory
         FileUtils.rm_rf(temp_dir) if Dir.exists?(temp_dir)
