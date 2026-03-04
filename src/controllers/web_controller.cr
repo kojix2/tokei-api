@@ -17,7 +17,7 @@ module Tokei::Api::Controllers
     private def self.base_url(env : HTTP::Server::Context) : String
       return ENV["BASE_URL"] if ENV["BASE_URL"]?
       scheme = env.request.headers["X-Forwarded-Proto"]? || ENV["DEFAULT_SCHEME"]? || "https"
-      host = env.request.headers["X-Forwarded-Host"]? || env.request.host_with_port
+      host = env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"
       "#{scheme}://#{host}"
     end
 
