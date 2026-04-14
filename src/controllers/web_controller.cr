@@ -143,11 +143,13 @@ module Tokei::Api::Controllers
 
         if social_bot?(env.request.headers["User-Agent"]?)
           base = base_url(env)
+          safe_owner = HTML.escape(owner)
+          safe_repo = HTML.escape(repo)
           image = "#{base}/og/github/#{owner}/#{repo}?format=png"
 
           meta = String.build do |io|
             io << %(<meta property="og:type" content="website">)
-            io << %(<meta property="og:title" content="#{owner}/#{repo}">)
+            io << %(<meta property="og:title" content="#{safe_owner}/#{safe_repo}">)
             io << %(<meta property="og:description" content="Language breakdown by tokei">)
             io << %(<meta property="og:url" content="#{base}/github/#{owner}/#{repo}">)
             io << %(<meta property="og:image" content="#{image}">)
@@ -157,7 +159,7 @@ module Tokei::Api::Controllers
           end
 
           body = String.build do |io|
-            io << %(<h1>#{owner}/#{repo}</h1>)
+            io << %(<h1>#{safe_owner}/#{safe_repo}</h1>)
             io << %(<p>Share this URL on social networks to show a bar chart preview.</p>)
             io << %(<img src="#{image}" alt="OG Preview" width="600" height="315">)
           end
