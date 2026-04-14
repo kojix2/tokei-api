@@ -7,7 +7,7 @@ RUN cargo install tokei
 
 
 # === Stage 2: Build Crystal app on Alpine ===
-FROM crystallang/crystal:alpine AS crystal-builder
+FROM crystallang/crystal:1-alpine AS crystal-builder
 
 RUN apk add --no-cache git postgresql-client
 
