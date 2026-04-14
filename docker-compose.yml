@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:18-alpine
+    image: postgres:alpine
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres

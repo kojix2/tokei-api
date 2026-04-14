@@ -1,13 +1,13 @@
 # === Stage 1: Build tokei with Rust on Alpine 3.22 ===
-FROM rust:1-alpine AS tokei-builder
+FROM rust:alpine AS tokei-builder
 
 RUN apk add --no-cache musl-dev
 
 RUN cargo install tokei
 
 
-# === Stage 2: Build Crystal app on Alpine 3.20 ===
-FROM crystallang/crystal:1-alpine AS crystal-builder
+# === Stage 2: Build Crystal app on Alpine ===
+FROM crystallang/crystal:alpine AS crystal-builder
 
 RUN apk add --no-cache git postgresql-client
 
@@ -21,7 +21,7 @@ RUN crystal build --release src/main.cr -o /app/tokei-api
 
 
 # === Final Stage: Minimal runtime ===
-FROM alpine:3
+FROM alpine:latest
 
 RUN apk add --no-cache git libpq libgcc libgc++ pcre2 \
 	rsvg-convert fontconfig freetype ttf-dejavu
