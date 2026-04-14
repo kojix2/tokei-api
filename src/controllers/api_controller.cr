@@ -161,7 +161,8 @@ module Tokei::Api::Controllers
           {error: {code: "invalid_request", message: "Missing required field: url", status: 400}}.to_json
         rescue ex
           env.response.status_code = 500
-          {error: {code: "server_error", message: "Internal server error: #{ex.message}", status: 500}}.to_json
+          STDERR.puts "POST /api/analyses error: #{ex.message}"
+          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
         end
       end
 
@@ -223,7 +224,8 @@ module Tokei::Api::Controllers
           response_data.to_json
         rescue ex
           env.response.status_code = 500
-          {error: {code: "server_error", message: "Internal server error: #{ex.message}", status: 500}}.to_json
+          STDERR.puts "GET /api/analyses error: #{ex.message}"
+          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
         end
       end
 
@@ -270,7 +272,8 @@ module Tokei::Api::Controllers
           response_data.to_json
         rescue ex
           env.response.status_code = 500
-          {error: {code: "server_error", message: "Internal server error: #{ex.message}", status: 500}}.to_json
+          STDERR.puts "GET /api/analyses/:id error: #{ex.message}"
+          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
         end
       end
 
@@ -300,7 +303,8 @@ module Tokei::Api::Controllers
           response_data.to_json
         rescue ex
           env.response.status_code = 500
-          {error: {code: "server_error", message: "Internal server error: #{ex.message}", status: 500}}.to_json
+          STDERR.puts "GET /api/analyses/:id/languages error: #{ex.message}"
+          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
         end
       end
 
@@ -401,7 +405,8 @@ module Tokei::Api::Controllers
           response_data.to_json
         rescue ex
           env.response.status_code = 500
-          {error: {code: "server_error", message: "Internal server error: #{ex.message}", status: 500}}.to_json
+          STDERR.puts "GET /api/analyses/:id/badges/:type error: #{ex.message}"
+          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
         end
       end
 
@@ -433,7 +438,8 @@ module Tokei::Api::Controllers
           response_data.to_json
         rescue ex
           env.response.status_code = 500
-          {error: {code: "server_error", message: "Internal server error: #{ex.message}", status: 500}}.to_json
+          STDERR.puts "GET /api/github/:owner/:repo/languages error: #{ex.message}"
+          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
         end
       end
 

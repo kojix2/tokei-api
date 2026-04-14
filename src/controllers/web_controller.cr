@@ -49,7 +49,8 @@ module Tokei::Api::Controllers
       # Redirect to results page
       env.redirect "/analyses/#{analysis.id}"
     rescue ex
-      error_message = "Error: #{ex.message}"
+      STDERR.puts "analyze error: #{ex.message}"
+      error_message = "An internal error occurred"
       Tokei::Api::Views::Renderer.render_index(error_message)
     end
 
@@ -116,7 +117,8 @@ module Tokei::Api::Controllers
           Tokei::Api::Views::Renderer.render_result(analysis, result_json)
         rescue ex
           env.response.status_code = 500
-          error_message = "Error: #{ex.message}"
+          STDERR.puts "analyses/:id error: #{ex.message}"
+          error_message = "An internal error occurred"
           Tokei::Api::Views::Renderer.render_index(error_message)
         end
       end
@@ -174,7 +176,8 @@ module Tokei::Api::Controllers
           process_github_analyze_request(env, owner, repo)
         rescue ex
           env.response.status_code = 500
-          error_message = "Error: #{ex.message}"
+          STDERR.puts "github/:owner/:repo error: #{ex.message}"
+          error_message = "An internal error occurred"
           Tokei::Api::Views::Renderer.render_index(error_message)
         end
       end
@@ -187,7 +190,8 @@ module Tokei::Api::Controllers
           env.response.print "Deleted #{deleted_count} old records."
         rescue ex
           env.response.status_code = 500
-          env.response.print "Error during cleanup: #{ex.message}"
+          STDERR.puts "cleanup error: #{ex.message}"
+          env.response.print "An internal error occurred"
         end
       end
 
@@ -210,7 +214,8 @@ module Tokei::Api::Controllers
 
       error 500 do |env, ex|
         env.response.content_type = "text/html"
-        Tokei::Api::Views::Renderer.render_error("Internal Server Error: #{ex.message}")
+        STDERR.puts "500 error: #{ex.message}"
+        Tokei::Api::Views::Renderer.render_error("Internal Server Error")
       end
 
       # Serve static files
