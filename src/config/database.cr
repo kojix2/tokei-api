@@ -5,7 +5,7 @@ module Tokei::Api::Config
   # Module for managing database connections
   module Database
     # Load environment variables
-    Dotenv.load
+    Dotenv.load unless ENV["CRYSTAL_ENV"]? == "test"
 
     # Database provider (local or neon)
     DATABASE_PROVIDER = ENV["DATABASE_PROVIDER"]? || "local"
@@ -45,20 +45,22 @@ module Tokei::Api::Config
       conn = connection
       begin
         # Create analyses table if it doesn't exist (execute SQL commands separately)
-        conn.exec "CREATE TABLE IF NOT EXISTS analyses (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          repo_url TEXT NOT NULL,
-          analyzed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          result JSONB NOT NULL,
-          total_lines INTEGER,
-          total_code INTEGER,
-          total_comments INTEGER,
-          total_blanks INTEGER,
-          top_language TEXT,
-          top_language_lines INTEGER,
-          language_count INTEGER,
-          code_comment_ratio FLOAT
-        );"
+        conn.exec <<-SQL
+          CREATE TABLE IF NOT EXISTS analyses (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            repo_url TEXT NOT NULL,
+            analyzed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            result JSONB NOT NULL,
+            total_lines INTEGER,
+            total_code INTEGER,
+            total_comments INTEGER,
+            total_blanks INTEGER,
+            top_language TEXT,
+            top_language_lines INTEGER,
+            language_count INTEGER,
+            code_comment_ratio FLOAT
+          );
+          SQL
 
         # Create indexes
         conn.exec "CREATE INDEX IF NOT EXISTS idx_analyses_repo_url ON analyses (repo_url);"

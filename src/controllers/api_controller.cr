@@ -22,10 +22,11 @@ module Tokei::Api::Controllers
 
       # Search for existing analysis results
       existing_analyses = Tokei::Api::Models::Analysis.find_by_repo_url(repo_url)
+      recent_analysis = existing_analyses.first?
 
       # Check if we have any recent analysis results (within 24 hours)
-      if !existing_analyses.empty? && existing_analyses[0].analyzed_at.not_nil! > Time.utc - 24.hours
-        return existing_analyses[0]
+      if recent_analysis && recent_analysis.analyzed_at.try(&.> Time.utc - 24.hours)
+        return recent_analysis
       end
 
       # Analyze repository
@@ -35,10 +36,11 @@ module Tokei::Api::Controllers
       analysis = Tokei::Api::Models::Analysis.new(repo_url: repo_url, result: result)
       analysis.save
 
-      return analysis
+      analysis
     end
 
     # Setup API endpoints
+    # ameba:disable Metrics/CyclomaticComplexity
     def self.setup
       # GET /api/badge/:type endpoint (for dynamic shields.io badges)
       get "/api/badge/:type" do |env|
@@ -82,7 +84,7 @@ module Tokei::Api::Controllers
           begin
             badge_data = generate_badge_data(badge_type, analysis)
             badge_data.to_json
-          rescue ex
+          rescue
             env.response.status_code = 400
             {
               schemaVersion: 1,
@@ -91,7 +93,7 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
-        rescue ex
+        rescue
           env.response.status_code = 500
           {
             schemaVersion: 1,
@@ -108,7 +110,10 @@ module Tokei::Api::Controllers
       post "/api/analyses" do |env|
         begin
           # Get repository URL from request body
-          request_body = env.request.body.not_nil!.gets_to_end
+          request_body = env.request.body.try(&.gets_to_end) || ""
+          if request_body.empty?
+            raise KeyError.new("Missing required field: url")
+          end
           request_json = JSON.parse(request_body)
 
           repo_url = request_json["url"]?.try(&.as_s) || ""
@@ -137,9 +142,9 @@ module Tokei::Api::Controllers
                 code_comment_ratio: analysis.code_comment_ratio,
               },
               links: {
-                self:      "/api/analyses/#{analysis.id.to_s}",
-                languages: "/api/analyses/#{analysis.id.to_s}/languages",
-                web:       "/analyses/#{analysis.id.to_s}",
+                self:      "/api/analyses/#{analysis.id}",
+                languages: "/api/analyses/#{analysis.id}/languages",
+                web:       "/analyses/#{analysis.id}",
               },
             },
           }
@@ -148,10 +153,10 @@ module Tokei::Api::Controllers
           env.response.status_code = 201 # Created
           env.response.content_type = "application/json"
           response_data.to_json
-        rescue ex : JSON::ParseException
+        rescue JSON::ParseException
           env.response.status_code = 400
           {error: {code: "invalid_request", message: "Invalid JSON format", status: 400}}.to_json
-        rescue ex : KeyError
+        rescue KeyError
           env.response.status_code = 400
           {error: {code: "invalid_request", message: "Missing required field: url", status: 400}}.to_json
         rescue ex
@@ -207,9 +212,9 @@ module Tokei::Api::Controllers
                 code_comment_ratio: analysis.code_comment_ratio,
               },
               links: {
-                self:      "/api/analyses/#{analysis.id.to_s}",
-                languages: "/api/analyses/#{analysis.id.to_s}/languages",
-                web:       "/analyses/#{analysis.id.to_s}",
+                self:      "/api/analyses/#{analysis.id}",
+                languages: "/api/analyses/#{analysis.id}/languages",
+                web:       "/analyses/#{analysis.id}",
               },
             },
           }
@@ -254,9 +259,9 @@ module Tokei::Api::Controllers
               },
               languages: languages_data,
               links:     {
-                self:      "/api/analyses/#{analysis.id.to_s}",
-                languages: "/api/analyses/#{analysis.id.to_s}/languages",
-                web:       "/analyses/#{analysis.id.to_s}",
+                self:      "/api/analyses/#{analysis.id}",
+                languages: "/api/analyses/#{analysis.id}/languages",
+                web:       "/analyses/#{analysis.id}",
               },
             },
           }
@@ -323,7 +328,7 @@ module Tokei::Api::Controllers
           begin
             badge_data = generate_badge_data(badge_type, analysis)
             badge_data.to_json
-          rescue ex
+          rescue
             env.response.status_code = 400
             {
               schemaVersion: 1,
@@ -332,7 +337,7 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
-        rescue ex
+        rescue
           env.response.status_code = 500
           {
             schemaVersion: 1,
@@ -450,7 +455,7 @@ module Tokei::Api::Controllers
             env.response.content_type = "application/json"
             badge_data = generate_badge_data(badge_type, analysis)
             badge_data.to_json
-          rescue ex
+          rescue
             env.response.status_code = 400
             {
               schemaVersion: 1,
@@ -459,7 +464,7 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
-        rescue ex
+        rescue
           env.response.status_code = 500
           {
             schemaVersion: 1,
@@ -490,7 +495,7 @@ module Tokei::Api::Controllers
             env.response.content_type = "application/json"
             badge_data = generate_badge_data(badge_type, analysis)
             badge_data.to_json
-          rescue ex
+          rescue
             env.response.status_code = 400
             {
               schemaVersion: 1,
@@ -499,7 +504,7 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
-        rescue ex
+        rescue
           env.response.status_code = 500
           {
             schemaVersion: 1,
@@ -509,6 +514,7 @@ module Tokei::Api::Controllers
           }.to_json
         end
       end
+      # ameba:enable Metrics/CyclomaticComplexity
     end
   end
 end

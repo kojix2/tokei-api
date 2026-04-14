@@ -24,8 +24,8 @@ module Tokei::Api::Views::Contexts
     end
 
     # Check if the repository URL is from GitHub
-    def is_github_repo?
-      Tokei::Api::Services::TokeiService.is_github_repo?(@analysis.repo_url)
+    def github_repo?
+      Tokei::Api::Services::TokeiService.github_repo?(@analysis.repo_url)
     end
 
     # Extract GitHub owner and repo name
@@ -37,7 +37,7 @@ module Tokei::Api::Views::Contexts
     def badge_url(type : BadgeType) : String
       base_url = server_base_url
 
-      if is_github_repo? && (info = github_info)
+      if github_repo? && (info = github_info)
         owner, repo = info
         badge_path = "#{base_url}/badge/github/#{owner}/#{repo}/#{type.to_s.downcase}"
       else
@@ -51,7 +51,7 @@ module Tokei::Api::Views::Contexts
     def badge_markdown(type : BadgeType, label : String) : String
       badge_img = badge_url(type)
 
-      if is_github_repo? && (info = github_info)
+      if github_repo? && (info = github_info)
         owner, repo = info
         link_url = "#{server_base_url}/github/#{owner}/#{repo}"
       else
@@ -63,7 +63,7 @@ module Tokei::Api::Views::Contexts
 
     # Get link URL for badges
     def badge_link_url : String
-      if is_github_repo? && (info = github_info)
+      if github_repo? && (info = github_info)
         owner, repo = info
         "#{server_base_url}/github/#{owner}/#{repo}"
       else

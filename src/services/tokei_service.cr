@@ -52,7 +52,7 @@ module Tokei::Api::Services
     end
 
     # Check if the repository URL is from GitHub
-    def self.is_github_repo?(url : String) : Bool
+    def self.github_repo?(url : String) : Bool
       !!(url.match(GITHUB_HTTPS_EXTRACTION) || url.match(GITHUB_SSH_EXTRACTION))
     end
 
@@ -126,7 +126,7 @@ module Tokei::Api::Services
           raise "Failed to analyze repository with tokei"
         end
 
-        return output_string
+        output_string
       ensure
         # Remove temporary directory
         FileUtils.rm_rf(temp_dir) if Dir.exists?(temp_dir)

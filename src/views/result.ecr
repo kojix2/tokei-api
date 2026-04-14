@@ -9,7 +9,7 @@
               <%= HTML.escape(analysis.repo_url) %>
               </a>
             </h2>
-          <small><%= analysis.analyzed_at.not_nil!.to_s("%Y-%m-%d %H:%M") %></small>
+          <small><%= analysis.analyzed_at.try(&.to_s("%Y-%m-%d %H:%M")) || "-" %></small>
         </div>
       </div>
       <div class="card-body">
@@ -35,7 +35,7 @@
             </div>
           </div>
         </div>
-        <% if is_github_repo? && (info = github_info) %>
+        <% if github_repo? && (info = github_info) %>
           <% owner, repo = info %>
           <div class="mt-4">
             <a href="<%= github_next_visualization_url(owner, repo) %>" class="btn" target="_blank">
@@ -118,7 +118,7 @@
                               <% file_blanks = file_stats["blanks"]?.try(&.as_i) || 0 %>
                               <tr>
                                 <td>
-                                  <% if is_github_repo? && (info = github_info) %>
+                                  <% if github_repo? && (info = github_info) %>
                                     <% owner, repo = info %>
                                     <a href="https://github.com/<%= owner %>/<%= repo %>/blob/HEAD/<%= file_name %>" target="_blank">
                                       <code><%= file_name %></code>
@@ -165,20 +165,6 @@
             <p>Add these badges to your README.md to showcase your code statistics:</p>
 
             <%
-              # Calculate values for badges
-              total_lines = total_code + total_comments + total_blanks
-
-              # Format numbers for display (e.g., 1.2k for 1200)
-              format_number = ->(num : Int32) {
-                if num >= 1_000_000
-                  "%.1fM" % (num / 1_000_000.0)
-                elsif num >= 1_000
-                  "%.1fk" % (num / 1_000.0)
-                else
-                  num.to_s
-                end
-              }
-
               # Get badge URLs and markdown using context methods
               total_lines_badge = badge_url(BadgeType::Lines)
               top_language_badge = badge_url(BadgeType::Language)
@@ -190,18 +176,14 @@
               top_language_md = badge_markdown(BadgeType::Language, "Top Language")
               language_count_md = badge_markdown(BadgeType::Languages, "Languages")
               code_comment_ratio_md = badge_markdown(BadgeType::Ratio, "Code to Comment")
-
               # Get GitHub info if applicable
-              github_info_tuple = github_info
-              github_owner = github_info_tuple ? github_info_tuple[0] : ""
-              github_repo = github_info_tuple ? github_info_tuple[1] : ""
             %>
 
             <!-- Total Lines Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
                 <a href="<%= badge_link_url %>" target="_blank"><img src="<%= total_lines_badge %>" alt="Lines of Code"></a>
-                <% if is_github_repo? %>
+                <% if github_repo? %>
                 <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
                 <% end %>
               </div>
@@ -219,7 +201,7 @@
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
                 <a href="<%= badge_link_url %>" target="_blank"><img src="<%= top_language_badge %>" alt="Top Language"></a>
-                <% if is_github_repo? %>
+                <% if github_repo? %>
                 <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
                 <% end %>
               </div>
@@ -237,7 +219,7 @@
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
                 <a href="<%= badge_link_url %>" target="_blank"><img src="<%= language_count_badge %>" alt="Languages"></a>
-                <% if is_github_repo? %>
+                <% if github_repo? %>
                 <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
                 <% end %>
               </div>
@@ -255,7 +237,7 @@
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
                 <a href="<%= badge_link_url %>" target="_blank"><img src="<%= code_comment_ratio_badge %>" alt="Code to Comment Ratio"></a>
-                <% if is_github_repo? %>
+                <% if github_repo? %>
                 <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
                 <% end %>
               </div>
@@ -274,7 +256,7 @@
                 <strong>Note:</strong> These badges are dynamic and will automatically reflect the latest analysis of your repository.
                 For efficiency, analysis results are cached for 24 hours. If you've made changes to your repository
                 and want to update the badge data, you can run a new analysis after the cache period expires.
-                <% if is_github_repo? %>
+                <% if github_repo? %>
                 <br><strong>GitHub Badge:</strong> Using GitHub-specific badge format. This URL format is optimized for GitHub repositories.
                 <% end %>
               </small>

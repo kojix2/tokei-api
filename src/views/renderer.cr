@@ -25,7 +25,7 @@ module Tokei::Api::Views
       # Build OG/Twitter meta tags for social preview
       base = result_context.server_base_url
       # point to unified OG route (extensionless); force PNG via format param
-      og_image = if result_context.is_github_repo? && (info = result_context.github_info)
+      og_image = if result_context.github_repo? && (info = result_context.github_info)
                    owner, repo = info
                    "#{base}/og/github/#{owner}/#{repo}?format=png"
                  else
@@ -34,7 +34,7 @@ module Tokei::Api::Views
                  end
       og_url = "#{base}/analyses/#{analysis.id}"
 
-      title = if result_context.is_github_repo? && (info = result_context.github_info)
+      title = if result_context.github_repo? && (info = result_context.github_info)
                 owner, repo = info
                 "#{owner}/#{repo} - Language Breakdown"
               else

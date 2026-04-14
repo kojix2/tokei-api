@@ -51,7 +51,7 @@ module Tokei::Api::Controllers
           env.response.content_type = "image/png"
           env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
           env.response.headers["Vary"] = "Accept"
-          bytes = File.open(cache, "rb") { |f| f.getb_to_end }
+          bytes = File.open(cache, "rb", &.getb_to_end)
           env.response.content_length = bytes.size
           env.response.write bytes
           return ""
@@ -80,10 +80,10 @@ module Tokei::Api::Controllers
       env.response.content_type = "image/png"
       env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
       env.response.headers["Vary"] = "Accept"
-      bytes = File.open(cache, "rb") { |f| f.getb_to_end }
+      bytes = File.open(cache, "rb", &.getb_to_end)
       env.response.content_length = bytes.size
       env.response.write bytes
-      return ""
+      ""
     end
 
     def self.setup

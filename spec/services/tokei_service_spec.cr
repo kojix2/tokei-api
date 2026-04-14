@@ -1,58 +1,64 @@
 require "spec"
 require "../../src/services/tokei_service"
 
+private def github_info!(url : String) : {String, String}
+  info = Tokei::Api::Services::TokeiService.extract_github_info(url)
+  raise "Expected GitHub URL to be parsed in spec: #{url}" unless info
+  info
+end
+
 describe Tokei::Api::Services::TokeiService do
   describe ".extract_github_info" do
     it "extracts owner and repo from GitHub HTTPS URLs" do
       # Basic GitHub HTTPS URL
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/kojix2/tokei-api").not_nil!
+      owner, repo = github_info!("https://github.com/kojix2/tokei-api")
       owner.should eq("kojix2")
       repo.should eq("tokei-api")
 
       # URL with .git extension
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/kojix2/tokei-api.git").not_nil!
+      owner, repo = github_info!("https://github.com/kojix2/tokei-api.git")
       owner.should eq("kojix2")
       repo.should eq("tokei-api")
 
       # URL with multiple .git extensions
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/kojix2/tokei-api.git.git.git").not_nil!
+      owner, repo = github_info!("https://github.com/kojix2/tokei-api.git.git.git")
       owner.should eq("kojix2")
       repo.should eq("tokei-api")
 
       # URL with period in repo name
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/ggml-org/llama.cpp").not_nil!
+      owner, repo = github_info!("https://github.com/ggml-org/llama.cpp")
       owner.should eq("ggml-org")
       repo.should eq("llama.cpp")
 
       # URL with period in repo name and .git extension
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("https://github.com/ggml-org/llama.cpp.git").not_nil!
+      owner, repo = github_info!("https://github.com/ggml-org/llama.cpp.git")
       owner.should eq("ggml-org")
       repo.should eq("llama.cpp")
     end
 
     it "extracts owner and repo from GitHub SSH URLs" do
       # Basic GitHub SSH URL
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:kojix2/tokei-api").not_nil!
+      owner, repo = github_info!("git@github.com:kojix2/tokei-api")
       owner.should eq("kojix2")
       repo.should eq("tokei-api")
 
       # URL with .git extension
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:kojix2/tokei-api.git").not_nil!
+      owner, repo = github_info!("git@github.com:kojix2/tokei-api.git")
       owner.should eq("kojix2")
       repo.should eq("tokei-api")
 
       # URL with multiple .git extensions
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:kojix2/tokei-api.git.git.git").not_nil!
+      owner, repo = github_info!("git@github.com:kojix2/tokei-api.git.git.git")
       owner.should eq("kojix2")
       repo.should eq("tokei-api")
 
       # URL with period in repo name
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:ggml-org/llama.cpp").not_nil!
+      owner, repo = github_info!("git@github.com:ggml-org/llama.cpp")
       owner.should eq("ggml-org")
       repo.should eq("llama.cpp")
 
       # URL with period in repo name and .git extension
-      owner, repo = Tokei::Api::Services::TokeiService.extract_github_info("git@github.com:ggml-org/llama.cpp.git").not_nil!
+      owner, repo = github_info!("git@github.com:ggml-org/llama.cpp.git")
       owner.should eq("ggml-org")
       repo.should eq("llama.cpp")
     end

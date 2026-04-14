@@ -32,10 +32,11 @@ module Tokei::Api::Controllers
 
       # Search for existing analysis results
       existing_analyses = Tokei::Api::Models::Analysis.find_by_repo_url(repo_url)
+      recent_analysis = existing_analyses.first?
 
-      if !existing_analyses.empty? && existing_analyses[0].analyzed_at.not_nil! > Time.utc - 24.hours
+      if recent_analysis && recent_analysis.analyzed_at.try(&.> Time.utc - 24.hours)
         # Use recent analysis results if available
-        analysis = existing_analyses[0]
+        analysis = recent_analysis
       else
         # Analyze repository
         result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url)
@@ -64,7 +65,7 @@ module Tokei::Api::Controllers
     # Setup Web endpoints
     def self.setup
       # GET / endpoint (home page)
-      get "/" do |env|
+      get "/" do |_env|
         error_message = nil
         Tokei::Api::Views::Renderer.render_index(error_message)
       end
@@ -188,13 +189,13 @@ module Tokei::Api::Controllers
         end
       end
 
-      get "/api" do |env|
+      get "/api" do |_env|
         error_message = nil
         Tokei::Api::Views::Renderer.render_api(error_message)
       end
 
       # GET /badges endpoint (badges documentation page)
-      get "/badges" do |env|
+      get "/badges" do |_env|
         error_message = nil
         Tokei::Api::Views::Renderer.render_badges(error_message)
       end

@@ -59,12 +59,12 @@ module Tokei::Api::Services
       end
 
       <<-SVG
-      <svg xmlns="http://www.w3.org/2000/svg" width="#{w}" height="#{h}">
-        <rect width="100%" height="100%" fill="#0B1020"/>
-        <text x="#{ml}" y="#{mt}" font-size="44" font-weight="700" fill="#F3F4F6" font-family="DejaVu Sans" dominant-baseline="hanging">#{escape_xml(title)}</text>
-        #{rows}
-      </svg>
-      SVG
+        <svg xmlns="http://www.w3.org/2000/svg" width="#{w}" height="#{h}">
+          <rect width="100%" height="100%" fill="#0B1020"/>
+          <text x="#{ml}" y="#{mt}" font-size="44" font-weight="700" fill="#F3F4F6" font-family="DejaVu Sans" dominant-baseline="hanging">#{escape_xml(title)}</text>
+          #{rows}
+        </svg>
+        SVG
     end
   end
 end

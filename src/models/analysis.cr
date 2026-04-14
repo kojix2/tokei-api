@@ -92,10 +92,10 @@ module Tokei::Api::Models
           conn.query(
             "INSERT INTO analyses (repo_url, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, analyzed_at",
             @repo_url, @result.to_json, @total_lines, @total_code, @total_comments, @total_blanks, @top_language, @top_language_lines, @language_count, @code_comment_ratio
-          ) do |rs|
-            if rs.move_next
-              @id = rs.read(UUID)
-              @analyzed_at = rs.read(Time)
+          ) do |result_set|
+            if result_set.move_next
+              @id = result_set.read(UUID)
+              @analyzed_at = result_set.read(Time)
             end
           end
         else
@@ -119,26 +119,26 @@ module Tokei::Api::Models
       conn = Tokei::Api::Config::Database.connection
       begin
         analyses = [] of Analysis
-        conn.query("SELECT id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE repo_url = $1 ORDER BY analyzed_at DESC", repo_url) do |rs|
-          rs.each do
-            id_value = rs.read(UUID)
-            repo_url = rs.read(String)
-            analyzed_at = rs.read(Time)
-            result = rs.read(JSON::Any)
+        conn.query("SELECT id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE repo_url = $1 ORDER BY analyzed_at DESC", repo_url) do |result_set|
+          result_set.each do
+            id_value = result_set.read(UUID)
+            repo_url = result_set.read(String)
+            analyzed_at = result_set.read(Time)
+            result = result_set.read(JSON::Any)
 
             analysis = Analysis.new(repo_url, result)
             analysis.id = id_value
             analysis.analyzed_at = analyzed_at
 
             # Read statistics from database if available
-            analysis.total_lines = rs.read(Int32?)
-            analysis.total_code = rs.read(Int32?)
-            analysis.total_comments = rs.read(Int32?)
-            analysis.total_blanks = rs.read(Int32?)
-            analysis.top_language = rs.read(String?)
-            analysis.top_language_lines = rs.read(Int32?)
-            analysis.language_count = rs.read(Int32?)
-            analysis.code_comment_ratio = rs.read(Float64?)
+            analysis.total_lines = result_set.read(Int32?)
+            analysis.total_code = result_set.read(Int32?)
+            analysis.total_comments = result_set.read(Int32?)
+            analysis.total_blanks = result_set.read(Int32?)
+            analysis.top_language = result_set.read(String?)
+            analysis.top_language_lines = result_set.read(Int32?)
+            analysis.language_count = result_set.read(Int32?)
+            analysis.code_comment_ratio = result_set.read(Float64?)
 
             analyses << analysis
           end
@@ -154,26 +154,26 @@ module Tokei::Api::Models
       conn = Tokei::Api::Config::Database.connection
       begin
         analysis = nil
-        conn.query("SELECT id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE id = $1", id) do |rs|
-          if rs.move_next
-            id_value = rs.read(UUID)
-            repo_url = rs.read(String)
-            analyzed_at = rs.read(Time)
-            result = rs.read(JSON::Any)
+        conn.query("SELECT id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE id = $1", id) do |result_set|
+          if result_set.move_next
+            id_value = result_set.read(UUID)
+            repo_url = result_set.read(String)
+            analyzed_at = result_set.read(Time)
+            result = result_set.read(JSON::Any)
 
             analysis = Analysis.new(repo_url, result)
             analysis.id = id_value
             analysis.analyzed_at = analyzed_at
 
             # Read statistics from database if available
-            analysis.total_lines = rs.read(Int32?)
-            analysis.total_code = rs.read(Int32?)
-            analysis.total_comments = rs.read(Int32?)
-            analysis.total_blanks = rs.read(Int32?)
-            analysis.top_language = rs.read(String?)
-            analysis.top_language_lines = rs.read(Int32?)
-            analysis.language_count = rs.read(Int32?)
-            analysis.code_comment_ratio = rs.read(Float64?)
+            analysis.total_lines = result_set.read(Int32?)
+            analysis.total_code = result_set.read(Int32?)
+            analysis.total_comments = result_set.read(Int32?)
+            analysis.total_blanks = result_set.read(Int32?)
+            analysis.top_language = result_set.read(String?)
+            analysis.top_language_lines = result_set.read(Int32?)
+            analysis.language_count = result_set.read(Int32?)
+            analysis.code_comment_ratio = result_set.read(Float64?)
           end
         end
         analysis
