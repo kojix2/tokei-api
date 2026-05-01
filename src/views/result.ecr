@@ -81,11 +81,11 @@
                 <% total_comments += comments %>
                 <% total_blanks += blanks %>
 
-                <tr class="language-row" data-language="<%= language %>">
+                <tr class="language-row" data-language="<%= HTML.escape(language) %>">
                   <td>
                     <div class="d-flex align-items-center">
                       <span class="toggle-icon me-2">▶</span>
-                      <strong><%= language %></strong>
+                      <strong><%= HTML.escape(language) %></strong>
                     </div>
                   </td>
                   <td><%= files %></td>
@@ -94,7 +94,7 @@
                   <td><%= blanks %></td>
                   <td><%= code + comments + blanks %></td>
                 </tr>
-                <tr class="file-details-row" data-language="<%= language %>" style="display: none;">
+                <tr class="file-details-row" data-language="<%= HTML.escape(language) %>" style="display: none;">
                   <td colspan="6" class="p-0">
                     <div class="file-details-container p-3">
                       <table class="table table-sm file-details-table">
@@ -120,11 +120,11 @@
                                 <td>
                                   <% if github_repo? && (info = github_info) %>
                                     <% owner, repo = info %>
-                                    <a href="https://github.com/<%= owner %>/<%= repo %>/blob/HEAD/<%= file_name %>" target="_blank">
-                                      <code><%= file_name %></code>
+                                    <a href="https://github.com/<%= owner %>/<%= repo %>/blob/HEAD/<%= URI.encode_path(file_name) %>" target="_blank">
+                                      <code><%= HTML.escape(file_name) %></code>
                                     </a>
                                   <% else %>
-                                    <code><%= file_name %></code>
+                                    <code><%= HTML.escape(file_name) %></code>
                                   <% end %>
                                 </td>
                                 <td><%= file_code %></td>
