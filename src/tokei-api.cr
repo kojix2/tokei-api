@@ -10,6 +10,17 @@ require "./controllers/og_controller"
 module Tokei::Api
   VERSION = "0.1.0"
 
+  CSP_POLICY = "default-src 'self'; " +
+               "base-uri 'self'; " +
+               "frame-ancestors 'none'; " +
+               "object-src 'none'; " +
+               "form-action 'self'; " +
+               "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; " +
+               "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; " +
+               "img-src 'self' data: https:; " +
+               "font-src 'self' https://cdn.jsdelivr.net data:; " +
+               "connect-src 'self'"
+
   # Load environment variables
   Dotenv.load
 
@@ -33,6 +44,13 @@ module Tokei::Api
     # Cleanup old data on startup
     deleted_count = Models::Analysis.cleanup_old_data
     puts "Cleanup: Removed #{deleted_count} old analysis records"
+
+    before_all do |env|
+      env.response.headers["Content-Security-Policy"] = ENV["CONTENT_SECURITY_POLICY"]? || CSP_POLICY
+      env.response.headers["X-Content-Type-Options"] = "nosniff"
+      env.response.headers["Referrer-Policy"] = ENV["REFERRER_POLICY"]? || "strict-origin-when-cross-origin"
+      env.response.headers["Permissions-Policy"] = ENV["PERMISSIONS_POLICY"]? || "accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+    end
 
     Kemal.run(port: @@port)
   end
