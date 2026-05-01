@@ -33,7 +33,7 @@ module Tokei::Api::Config
         PG.connect(conn_options)
       rescue ex
         puts "Database connection error: #{ex.message}"
-        puts "Connection target: #{DATABASE_PROVIDER} (#{DATABASE_URL})"
+        puts "Connection target provider: #{DATABASE_PROVIDER}"
         raise ex
       end
     end
