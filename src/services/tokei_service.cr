@@ -20,6 +20,9 @@ module Tokei::Api::Services
     # Timeout for git clone operation (in seconds)
     CLONE_TIMEOUT = ENV["CLONE_TIMEOUT_SECONDS"]?.try(&.to_i) || 30
 
+    # Timeout for tokei analysis operation (in seconds)
+    TOKEI_TIMEOUT = ENV["TOKEI_TIMEOUT_SECONDS"]?.try(&.to_i) || 30
+
     # Common URL patterns
     # GitHub URL patterns
     GITHUB_HTTPS_VALIDATION = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(?:\.git|\/)?$/
@@ -110,15 +113,19 @@ module Tokei::Api::Services
         # Use Process.run for safety (no shell interpretation)
         output = IO::Memory.new
         tokei_result = Process.run(
-          "tokei",
-          ["--output", "json"],
+          "timeout",
+          ["#{TOKEI_TIMEOUT}s", "tokei", "--output", "json"],
           chdir: temp_dir,
           output: output,
           error: Process::Redirect::Close
         )
 
         unless tokei_result.success?
-          raise "Failed to analyze repository with tokei"
+          if tokei_result.exit_code == 124
+            raise "Repository analysis timed out after #{TOKEI_TIMEOUT} seconds. The repository may be too large."
+          else
+            raise "Failed to analyze repository with tokei"
+          end
         end
 
         output_string = output.to_s
