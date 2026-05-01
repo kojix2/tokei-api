@@ -43,7 +43,8 @@ module Tokei::Api::Controllers
 
         # Save to database
         analysis = Tokei::Api::Models::Analysis.new(repo_url: repo_url, result: result)
-        analysis.save
+        saved = analysis.save
+        raise "Failed to persist analysis result" unless saved && analysis.id
       end
 
       # Redirect to results page
