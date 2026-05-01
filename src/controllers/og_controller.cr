@@ -34,28 +34,32 @@ module Tokei::Api::Controllers
     end
 
     private def self.serve_og(env : HTTP::Server::Context, cache_key : String, owner : String, repo : String, repo_url : String)
+      svg_mode = wants_svg?(env)
+
+      cache = File.join(cache_dir, "#{cache_key}.png")
+      unless svg_mode
+        if File.exists?(cache)
+          mtime = File.info(cache).modification_time
+          if (Time.utc - mtime) <= CACHE_TTL.seconds
+            env.response.content_type = "image/png"
+            env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
+            env.response.headers["Vary"] = "Accept"
+            bytes = File.open(cache, "rb", &.getb_to_end)
+            env.response.content_length = bytes.size
+            env.response.write bytes
+            return ""
+          end
+        end
+      end
+
       json = Tokei::Api::Services::TokeiService.analyze_repo(repo_url)
       svg = Tokei::Api::Services::OgImageService.generate_svg(owner, repo, json)
 
-      if wants_svg?(env)
+      if svg_mode
         env.response.content_type = "image/svg+xml; charset=utf-8"
         env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
         env.response.headers["Vary"] = "Accept"
         return svg
-      end
-
-      cache = File.join(cache_dir, "#{cache_key}.png")
-      if File.exists?(cache)
-        mtime = File.info(cache).modification_time
-        if (Time.utc - mtime) <= CACHE_TTL.seconds
-          env.response.content_type = "image/png"
-          env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
-          env.response.headers["Vary"] = "Accept"
-          bytes = File.open(cache, "rb", &.getb_to_end)
-          env.response.content_length = bytes.size
-          env.response.write bytes
-          return ""
-        end
       end
 
       tmp_svg = File.join(Tokei::Api::Services::TokeiService::TEMP_DIR_BASE, "og-#{Random::Secure.hex(8)}.svg")
