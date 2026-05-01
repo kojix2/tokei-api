@@ -8,6 +8,18 @@ require "../models/analysis"
 module Tokei::Api::Controllers
   # Controller for API
   module ApiController
+    GITHUB_PATH_SAFE = /^[A-Za-z0-9._-]+$/
+
+    private def self.valid_github_param?(value : String) : Bool
+      value.matches?(GITHUB_PATH_SAFE)
+    end
+
+    private def self.invalid_owner_repo_response(env : HTTP::Server::Context) : String
+      env.response.status_code = 400
+      env.response.content_type = "application/json"
+      {error: {code: "invalid_request", message: "Invalid owner or repo", status: 400}}.to_json
+    end
+
     # Badge data generation (via shared service)
     private def self.generate_badge_data(badge_type : String, analysis)
       Tokei::Api::Services::BadgeService.generate(badge_type, analysis)
@@ -361,6 +373,10 @@ module Tokei::Api::Controllers
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
 
+          unless valid_github_param?(owner) && valid_github_param?(repo)
+            next invalid_owner_repo_response(env)
+          end
+
           # Construct GitHub repository URL
           repo_url = "https://github.com/#{owner}/#{repo}"
 
@@ -417,6 +433,10 @@ module Tokei::Api::Controllers
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
 
+          unless valid_github_param?(owner) && valid_github_param?(repo)
+            next invalid_owner_repo_response(env)
+          end
+
           # Construct GitHub repository URL
           repo_url = "https://github.com/#{owner}/#{repo}"
 
@@ -450,6 +470,10 @@ module Tokei::Api::Controllers
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
           badge_type = env.params.url["type"]
+
+          unless valid_github_param?(owner) && valid_github_param?(repo)
+            next invalid_owner_repo_response(env)
+          end
 
           # Construct GitHub repository URL
           repo_url = "https://github.com/#{owner}/#{repo}"
@@ -490,6 +514,10 @@ module Tokei::Api::Controllers
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
           badge_type = env.params.url["type"]
+
+          unless valid_github_param?(owner) && valid_github_param?(repo)
+            next invalid_owner_repo_response(env)
+          end
 
           # Construct GitHub repository URL
           repo_url = "https://github.com/#{owner}/#{repo}"

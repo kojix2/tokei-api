@@ -7,6 +7,12 @@ require "../views/contexts/layout_context"
 module Tokei::Api::Controllers
   # Controller for Web
   module WebController
+    GITHUB_PATH_SAFE = /^[A-Za-z0-9._-]+$/
+
+    private def self.valid_github_param?(value : String) : Bool
+      value.matches?(GITHUB_PATH_SAFE)
+    end
+
     # Detect common social preview bots (Twitter, Facebook, LinkedIn, Slack, Discord, etc.)
     private def self.social_bot?(ua : String?) : Bool
       return false unless ua
@@ -143,6 +149,11 @@ module Tokei::Api::Controllers
       get "/github/:owner/:repo" do |env|
         owner = env.params.url["owner"]
         repo = env.params.url["repo"]
+
+        unless valid_github_param?(owner) && valid_github_param?(repo)
+          env.response.status_code = 400
+          next Tokei::Api::Views::Renderer.render_index("Invalid GitHub owner or repository")
+        end
 
         if social_bot?(env.request.headers["User-Agent"]?)
           base = base_url(env)
