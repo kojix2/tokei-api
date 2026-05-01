@@ -95,7 +95,7 @@ module Tokei::Api::Services
         # Use Process.run for safety (no shell interpretation)
         clone_result = Process.run(
           "timeout",
-          ["#{CLONE_TIMEOUT}s", "git", "clone", "--depth", "1", "--single-branch", repo_url, temp_dir],
+          ["#{CLONE_TIMEOUT}s", "git", "clone", "--depth", "1", "--single-branch", "--no-tags", repo_url, temp_dir],
           output: Process::Redirect::Close,
           error: Process::Redirect::Close
         )
