@@ -5,7 +5,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h2 class="mb-0">
               Analysis Results:
-              <a href="<%= HTML.escape(analysis.repo_url) %>" target="_blank" class="text-white">
+              <a href="<%= HTML.escape(analysis.repo_url) %>" target="_blank" rel="noopener noreferrer" class="text-white">
               <%= HTML.escape(analysis.repo_url) %>
               </a>
             </h2>
@@ -38,13 +38,13 @@
         <% if github_repo? && (info = github_info) %>
           <% owner, repo = info %>
           <div class="mt-4">
-            <a href="<%= github_next_visualization_url(owner, repo) %>" class="btn" target="_blank">
+            <a href="<%= github_next_visualization_url(owner, repo) %>" class="btn" target="_blank" rel="noopener noreferrer">
               Visualize
             </a>
-            <a href="<%= gitdiagram_url(owner, repo) %>" class="btn" target="_blank">
+            <a href="<%= gitdiagram_url(owner, repo) %>" class="btn" target="_blank" rel="noopener noreferrer">
               GitDiagram
             </a>
-            <a href="<%= deepwiki_url(owner, repo) %>" class="btn" target="_blank">
+            <a href="<%= deepwiki_url(owner, repo) %>" class="btn" target="_blank" rel="noopener noreferrer">
               DeepWiki
             </a>
           </div>
@@ -120,7 +120,7 @@
                                 <td>
                                   <% if github_repo? && (info = github_info) %>
                                     <% owner, repo = info %>
-                                    <a href="https://github.com/<%= owner %>/<%= repo %>/blob/HEAD/<%= URI.encode_path(file_name) %>" target="_blank">
+                                    <a href="https://github.com/<%= owner %>/<%= repo %>/blob/HEAD/<%= URI.encode_path(file_name) %>" target="_blank" rel="noopener noreferrer">
                                       <code><%= HTML.escape(file_name) %></code>
                                     </a>
                                   <% else %>
@@ -182,7 +182,7 @@
             <!-- Total Lines Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= badge_link_url %>" target="_blank"><img src="<%= total_lines_badge %>" alt="Lines of Code"></a>
+                <a href="<%= badge_link_url %>" target="_blank" rel="noopener noreferrer"><img src="<%= total_lines_badge %>" alt="Lines of Code"></a>
                 <% if github_repo? %>
                 <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
                 <% end %>
@@ -200,7 +200,7 @@
             <!-- Top Language Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= badge_link_url %>" target="_blank"><img src="<%= top_language_badge %>" alt="Top Language"></a>
+                <a href="<%= badge_link_url %>" target="_blank" rel="noopener noreferrer"><img src="<%= top_language_badge %>" alt="Top Language"></a>
                 <% if github_repo? %>
                 <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
                 <% end %>
@@ -218,7 +218,7 @@
             <!-- Language Count Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= badge_link_url %>" target="_blank"><img src="<%= language_count_badge %>" alt="Languages"></a>
+                <a href="<%= badge_link_url %>" target="_blank" rel="noopener noreferrer"><img src="<%= language_count_badge %>" alt="Languages"></a>
                 <% if github_repo? %>
                 <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
                 <% end %>
@@ -236,7 +236,7 @@
             <!-- Code to Comment Ratio Badge -->
             <div class="row mb-3 align-items-center">
               <div class="col-md-6">
-                <a href="<%= badge_link_url %>" target="_blank"><img src="<%= code_comment_ratio_badge %>" alt="Code to Comment Ratio"></a>
+                <a href="<%= badge_link_url %>" target="_blank" rel="noopener noreferrer"><img src="<%= code_comment_ratio_badge %>" alt="Code to Comment Ratio"></a>
                 <% if github_repo? %>
                 <small class="text-muted ms-1"><span class="badge bg-secondary">GitHub</span></small>
                 <% end %>
@@ -266,7 +266,7 @@
 
         <div class="mt-4">
           <a href="/" class="btn btn-primary">Back to Home</a>
-          <a href="/api/analyses/<%= analysis.id %>" class="btn btn-info" target="_blank">View as JSON</a>
+          <a href="/api/analyses/<%= analysis.id %>" class="btn btn-info" target="_blank" rel="noopener noreferrer">View as JSON</a>
         </div>
       </div>
     </div>
