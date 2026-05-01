@@ -195,17 +195,18 @@ module Tokei::Api::Controllers
       end
 
       # POST /cleanup endpoint (delete old data)
-      post "/cleanup" do |env|
-        begin
-          deleted_count = Tokei::Api::Models::Analysis.cleanup_old_data
-          env.response.status_code = 200
-          env.response.print "Deleted #{deleted_count} old records."
-        rescue ex
-          env.response.status_code = 500
-          STDERR.puts "cleanup error: #{ex.message}"
-          env.response.print "An internal error occurred"
-        end
-      end
+      # Disabled from public routes.
+      # post "/cleanup" do |env|
+      #   begin
+      #     deleted_count = Tokei::Api::Models::Analysis.cleanup_old_data
+      #     env.response.status_code = 200
+      #     env.response.print "Deleted #{deleted_count} old records."
+      #   rescue ex
+      #     env.response.status_code = 500
+      #     STDERR.puts "cleanup error: #{ex.message}"
+      #     env.response.print "An internal error occurred"
+      #   end
+      # end
 
       get "/api" do |_env|
         error_message = nil
