@@ -1,11 +1,14 @@
 require "kemal"
 require "../services/tokei_service"
 require "../services/og_image_service"
+require "../models/analysis"
 
 module Tokei::Api::Controllers
   class OgController
-    CACHE_TTL = (ENV["OG_CACHE_TTL_SECONDS"]? || "21600").to_i64 # 6 hours
-    SAFE      = /^[A-Za-z0-9._-]+$/
+    CACHE_TTL        = (ENV["OG_CACHE_TTL_SECONDS"]? || "21600").to_i64 # 6 hours
+    PLACEHOLDER_TTL  = (ENV["OG_PLACEHOLDER_CACHE_TTL_SECONDS"]? || "300").to_i64
+    PLACEHOLDER_JSON = "{}"
+    SAFE             = /^[A-Za-z0-9._-]+$/
 
     def self.cache_dir : String
       base = Tokei::Api::Services::TokeiService::TEMP_DIR_BASE
@@ -33,6 +36,14 @@ module Tokei::Api::Controllers
       s.gsub(/[^A-Za-z0-9._-]+/, "_")
     end
 
+    private def self.og_data_json(repo_url : String) : String
+      if analysis = Tokei::Api::Models::Analysis.find_latest_full_by_repo_url(repo_url)
+        return analysis.result.to_json
+      end
+
+      PLACEHOLDER_JSON
+    end
+
     private def self.serve_og(env : HTTP::Server::Context, cache_key : String, owner : String, repo : String, repo_url : String)
       svg_mode = wants_svg?(env)
 
@@ -52,12 +63,14 @@ module Tokei::Api::Controllers
         end
       end
 
-      json = Tokei::Api::Services::TokeiService.analyze_repo(repo_url)
+      json = og_data_json(repo_url)
+      cacheable = json != PLACEHOLDER_JSON
+      max_age = cacheable ? CACHE_TTL : PLACEHOLDER_TTL
       svg = Tokei::Api::Services::OgImageService.generate_svg(owner, repo, json)
 
       if svg_mode
         env.response.content_type = "image/svg+xml; charset=utf-8"
-        env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
+        env.response.headers["Cache-Control"] = "public, max-age=#{max_age}"
         env.response.headers["Vary"] = "Accept"
         return svg
       end
@@ -77,14 +90,17 @@ module Tokei::Api::Controllers
         return "failed to render png"
       end
 
-      FileUtils.mkdir_p(File.dirname(cache)) unless Dir.exists?(File.dirname(cache))
-      FileUtils.mv(tmp_png, cache)
+      if cacheable
+        FileUtils.mkdir_p(File.dirname(cache)) unless Dir.exists?(File.dirname(cache))
+        FileUtils.mv(tmp_png, cache)
+      end
       FileUtils.rm_rf(tmp_svg)
 
       env.response.content_type = "image/png"
-      env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
+      env.response.headers["Cache-Control"] = "public, max-age=#{max_age}"
       env.response.headers["Vary"] = "Accept"
-      bytes = File.open(cache, "rb", &.getb_to_end)
+      bytes = File.open(cacheable ? cache : tmp_png, "rb", &.getb_to_end)
+      FileUtils.rm_rf(tmp_png) unless cacheable
       env.response.content_length = bytes.size
       env.response.write bytes
       ""

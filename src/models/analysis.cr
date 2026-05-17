@@ -183,6 +183,39 @@ module Tokei::Api::Models
       end
     end
 
+    # Search latest analysis by repository URL with the full result JSON.
+    # Useful for flows that need language breakdown data.
+    def self.find_latest_full_by_repo_url(repo_url : String) : Analysis?
+      conn = Tokei::Api::Config::Database.connection
+      begin
+        analysis = nil
+        conn.query("SELECT id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE repo_url = $1 ORDER BY analyzed_at DESC LIMIT 1", repo_url) do |result_set|
+          if result_set.move_next
+            id_value = result_set.read(UUID)
+            repo_url = result_set.read(String)
+            analyzed_at = result_set.read(Time)
+            result = result_set.read(JSON::Any)
+
+            record = Analysis.new(repo_url, result)
+            record.id = id_value
+            record.analyzed_at = analyzed_at
+            record.total_lines = result_set.read(Int32?)
+            record.total_code = result_set.read(Int32?)
+            record.total_comments = result_set.read(Int32?)
+            record.total_blanks = result_set.read(Int32?)
+            record.top_language = result_set.read(String?)
+            record.top_language_lines = result_set.read(Int32?)
+            record.language_count = result_set.read(Int32?)
+            record.code_comment_ratio = result_set.read(Float64?)
+            analysis = record
+          end
+        end
+        analysis
+      ensure
+        conn.close
+      end
+    end
+
     # Search by ID without loading large result JSON.
     # Useful for badge endpoint where only stats are required.
     def self.find_summary_by_id(id : String) : Analysis?
