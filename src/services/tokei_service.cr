@@ -7,7 +7,7 @@ module Tokei::Api::Services
   # Service class for executing tokei command
   class TokeiService
     # Load environment variables (skip in test environment)
-    Dotenv.load unless ENV["CRYSTAL_ENV"]? == "test"
+    Dotenv.load if File.exists?(".env") && ENV["CRYSTAL_ENV"]? != "test"
 
     # Git configuration
     ENV["GIT_TERMINAL_PROMPT"] ||= "0"

@@ -22,7 +22,7 @@ module Tokei::Api
                "connect-src 'self'"
 
   # Load environment variables
-  Dotenv.load
+  Dotenv.load if File.exists?(".env")
 
   # Port configuration
   @@port = ENV["PORT"]?.try(&.to_i) || 3000

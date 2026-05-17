@@ -36,9 +36,8 @@ module Tokei::Api::Controllers
         return Tokei::Api::Views::Renderer.render_index(error_message)
       end
 
-      # Search for existing analysis results
-      existing_analyses = Tokei::Api::Models::Analysis.find_by_repo_url(repo_url)
-      recent_analysis = existing_analyses.first?
+      # Search latest analysis result using lightweight summary query
+      recent_analysis = Tokei::Api::Models::Analysis.find_latest_by_repo_url(repo_url)
 
       if recent_analysis && recent_analysis.analyzed_at.try(&.> Time.utc - 24.hours)
         # Use recent analysis results if available

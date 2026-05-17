@@ -5,7 +5,7 @@ module Tokei::Api::Config
   # Module for managing database connections
   module Database
     # Load environment variables
-    Dotenv.load unless ENV["CRYSTAL_ENV"]? == "test"
+    Dotenv.load if File.exists?(".env") && ENV["CRYSTAL_ENV"]? != "test"
 
     # Database provider (local or neon)
     DATABASE_PROVIDER = ENV["DATABASE_PROVIDER"]? || "local"

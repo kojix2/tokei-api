@@ -32,9 +32,8 @@ module Tokei::Api::Controllers
         raise "Invalid repository URL"
       end
 
-      # Search for existing analysis results
-      existing_analyses = Tokei::Api::Models::Analysis.find_by_repo_url(repo_url)
-      recent_analysis = existing_analyses.first?
+      # Search latest analysis result using lightweight summary query
+      recent_analysis = Tokei::Api::Models::Analysis.find_latest_by_repo_url(repo_url)
 
       # Check if we have any recent analysis results (within 24 hours)
       if recent_analysis && recent_analysis.analyzed_at.try(&.> Time.utc - 24.hours)
@@ -50,6 +49,28 @@ module Tokei::Api::Controllers
       raise "Failed to persist analysis result" unless saved && analysis.id
 
       analysis
+    end
+
+    # Get analysis with full result payload when language breakdown is needed.
+    private def self.get_full_analysis_for_repo(repo_url : String)
+      analysis = get_analysis_for_repo(repo_url)
+
+      # Summary-only records carry an empty result payload; reload full row by id.
+      unless analysis.result.as_h.empty?
+        return analysis
+      end
+
+      id = analysis.id
+      if id && (full_analysis = Tokei::Api::Models::Analysis.find(id.to_s))
+        return full_analysis
+      end
+
+      # Fallback: perform analysis again if the row disappeared between queries.
+      result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url)
+      refreshed = Tokei::Api::Models::Analysis.new(repo_url: repo_url, result: result)
+      saved = refreshed.save
+      raise "Failed to persist analysis result" unless saved && refreshed.id
+      refreshed
     end
 
     # Setup API endpoints
@@ -77,10 +98,10 @@ module Tokei::Api::Controllers
           end
 
           # Search for existing analysis results (badge endpoint does not trigger analysis)
-          existing_analyses = Tokei::Api::Models::Analysis.find_by_repo_url(repo_url)
+          analysis = Tokei::Api::Models::Analysis.find_latest_by_repo_url(repo_url)
 
-          # Check if we have any analysis results
-          if existing_analyses.empty?
+          # Check if we have any analysis result
+          if analysis.nil?
             env.response.status_code = 404
             next {
               schemaVersion: 1,
@@ -90,8 +111,8 @@ module Tokei::Api::Controllers
             }.to_json
           end
 
-          # Use the most recent analysis
-          analysis = existing_analyses[0]
+          # Allow intermediaries to cache badge payload briefly
+          env.response.headers["Cache-Control"] = "public, max-age=300"
 
           # Generate badge data
           begin
@@ -197,17 +218,14 @@ module Tokei::Api::Controllers
             next {error: {code: "invalid_request", message: "Invalid repository URL", status: 400}}.to_json
           end
 
-          # Find existing analysis results for the repository
-          existing_analyses = Tokei::Api::Models::Analysis.find_by_repo_url(repo_url)
+          # Find latest analysis result for the repository
+          analysis = Tokei::Api::Models::Analysis.find_latest_by_repo_url(repo_url)
 
           # Return 404 if no analysis is found
-          if existing_analyses.empty?
+          if analysis.nil?
             env.response.status_code = 404
             next {error: {code: "not_found", message: "No analysis found for the given URL", status: 404}}.to_json
           end
-
-          # Use the most recent analysis (first element in the array)
-          analysis = existing_analyses[0]
 
           # Prepare response data
           response_data = {
@@ -329,7 +347,7 @@ module Tokei::Api::Controllers
 
           env.response.content_type = "application/json"
 
-          analysis = Tokei::Api::Models::Analysis.find(id)
+          analysis = Tokei::Api::Models::Analysis.find_summary_by_id(id)
 
           if analysis.nil?
             env.response.status_code = 404
@@ -340,6 +358,8 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
+
+          env.response.headers["Cache-Control"] = "public, max-age=300"
 
           # Generate badge data
           begin
@@ -381,7 +401,7 @@ module Tokei::Api::Controllers
           repo_url = "https://github.com/#{owner}/#{repo}"
 
           # Get analysis
-          analysis = get_analysis_for_repo(repo_url)
+          analysis = get_full_analysis_for_repo(repo_url)
 
           languages_data = Tokei::Api::Services::LanguageStatsService.extract_basic(analysis.result)
 
@@ -441,7 +461,7 @@ module Tokei::Api::Controllers
           repo_url = "https://github.com/#{owner}/#{repo}"
 
           # Get analysis
-          analysis = get_analysis_for_repo(repo_url)
+          analysis = get_full_analysis_for_repo(repo_url)
 
           languages_data = Tokei::Api::Services::LanguageStatsService.extract_with_percentage(analysis.result)
 
