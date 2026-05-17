@@ -6,7 +6,6 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_PROVIDER=local
       - DATABASE_URL=postgresql://postgres:postgres@db/tokei-api
       - PORT=3000
       - KEMAL_ENV=development

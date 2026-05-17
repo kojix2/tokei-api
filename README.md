@@ -84,7 +84,6 @@ Available badge types: `lines`, `language`, `languages`, `ratio`
    Key environment variables:
 
    - `DATABASE_URL`: PostgreSQL connection string
-   - `DATABASE_PROVIDER`: Database provider (local or neon)
    - `TEMP_DIR`: Directory for temporary git clones
    - `CLONE_TIMEOUT_SECONDS`: Timeout for git clone operations (default: 30)
    - `RETENTION_DAYS`: Number of days to retain analysis data (default: 30)
@@ -218,15 +217,13 @@ docker compose down -v
 
 #### Switching environments
 
-You can switch between local PostgreSQL and Neon by changing `DATABASE_PROVIDER` in the `.env` file:
+You can switch between local PostgreSQL and managed PostgreSQL providers by changing `DATABASE_URL` in the `.env` file. Include provider-specific options such as `sslmode=require` directly in the connection string:
 
 ```
 # For local development (PostgreSQL in Docker Compose)
-DATABASE_PROVIDER=local
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tokei-api
 
-# For Neon connection (when deploying to Koyeb)
-# DATABASE_PROVIDER=neon
+# For managed PostgreSQL providers such as Koyeb or Neon
 # DATABASE_URL=postgresql://username:password@hostname/database?sslmode=require
 ```
 

@@ -7,40 +7,23 @@ module Tokei::Api::Config
     # Load environment variables
     Dotenv.load if File.exists?(".env") && ENV["CRYSTAL_ENV"]? != "test"
 
-    # Database provider (local or neon)
-    DATABASE_PROVIDER = ENV["DATABASE_PROVIDER"]? || "local"
-
     # Database connection URL
     DATABASE_URL = ENV["DATABASE_URL"]? || "postgresql://localhost/tokei-api"
 
     # Get database connection
     def self.connection
-      # Set connection options
-      conn_options = "#{DATABASE_URL}"
-
-      # Add SSL mode for Neon
-      if DATABASE_PROVIDER == "neon" && !conn_options.includes?("sslmode=")
-        # Add correctly as URL parameter
-        if conn_options.includes?("?")
-          conn_options += "&sslmode=require"
-        else
-          conn_options += "?sslmode=require"
-        end
-      end
-
       # Attempt connection
       begin
-        PG.connect(conn_options)
+        PG.connect(DATABASE_URL)
       rescue ex
         puts "Database connection error: #{ex.message}"
-        puts "Connection target provider: #{DATABASE_PROVIDER}"
         raise ex
       end
     end
 
     # Initialize database (create tables, etc.)
     def self.setup
-      puts "Initializing database... (Provider: #{DATABASE_PROVIDER})"
+      puts "Initializing database..."
 
       conn = connection
       begin
