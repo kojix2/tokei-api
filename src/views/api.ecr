@@ -49,8 +49,8 @@ curl "<%= server_base_url %>/api/analyses?url=https://github.com/kojix2/tokei-ap
 // Analyze a GitHub repository directly
 curl <%= server_base_url %>/api/github/kojix2/tokei-api
 
-// Retrieve badge data for any Git repository
-curl "<%= server_base_url %>/api/badge/lines?url=https://github.com/kojix2/tokei-api"
+// Retrieve badge data for a GitHub repository
+curl <%= server_base_url %>/badge/github/kojix2/tokei-api/lines
         </code></pre>
 
         <h3>Response Format</h3>
