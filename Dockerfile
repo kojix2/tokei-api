@@ -37,8 +37,13 @@ COPY --from=crystal-builder /app/public /app/public
 # Copy tokei binary built with newer Rust/Alpine
 COPY --from=tokei-builder /usr/local/cargo/bin/tokei /usr/local/bin/tokei
 
-# Create temp directory
-RUN mkdir -p /tmp/tokei-api
+# Create an unprivileged runtime user and writable temp directory
+RUN addgroup -S tokei-api \
+	&& adduser -S -G tokei-api tokei-api \
+	&& mkdir -p /tmp/tokei-api \
+	&& chown -R tokei-api:tokei-api /tmp/tokei-api
+
+USER tokei-api
 
 EXPOSE 3000
 
