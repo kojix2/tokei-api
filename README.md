@@ -57,7 +57,7 @@ Available badge types: `lines`, `language`, `languages`, `ratio`
 - [Crystal](https://crystal-lang.org/) 1.15.1 or higher
 - [tokei](https://github.com/XAMPPRocky/tokei) command
 - [Git](https://git-scm.com/)
-- PostgreSQL (or Neon)
+- SQLite
 
 ### Setup
 
@@ -78,15 +78,15 @@ Available badge types: `lines`, `language`, `languages`, `ratio`
 
    ```bash
    cp .env.example .env
-   # Edit the .env file to set database connection information and other settings
+   # Edit the .env file to set cache and other settings
    ```
 
    Key environment variables:
 
-   - `DATABASE_URL`: PostgreSQL connection string
+   - `CACHE_DB_PATH`: SQLite cache database path
    - `TEMP_DIR`: Directory for temporary git clones
    - `CLONE_TIMEOUT_SECONDS`: Timeout for git clone operations (default: 30)
-   - `RETENTION_DAYS`: Number of days to retain analysis data (default: 30)
+   - `RETENTION_DAYS`: Number of days to retain analysis data (default: 7)
 
 4. Prepare the database
 
@@ -156,14 +156,14 @@ crystal run src/tokei-api.cr
 
 ### Database Schema
 
-The application uses a PostgreSQL database with the following schema:
+The application uses a SQLite cache database with the following schema:
 
 ```sql
 CREATE TABLE analyses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id TEXT PRIMARY KEY,
   repo_url TEXT NOT NULL,
-  analyzed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  result JSONB NOT NULL,
+  analyzed_at TEXT NOT NULL,
+  result TEXT NOT NULL,
   total_lines INTEGER,
   total_code INTEGER,
   total_comments INTEGER,
@@ -182,8 +182,9 @@ CREATE TABLE analyses (
 1. Create a Koyeb account
 2. Create a new application
 3. Connect your GitHub repository
-4. Set environment variables (DATABASE_URL, etc.)
-5. Execute deployment
+4. Set environment variables. By default, `CACHE_DB_PATH` uses `/tmp/tokei-api/tokei-api.sqlite3`, so the SQLite cache is discarded when the instance is replaced.
+5. Run a single instance when using SQLite file storage.
+6. Execute deployment
 
 ## Running with Docker
 
@@ -199,7 +200,7 @@ docker run -p 3000:3000 --env-file .env tokei-api
 
 ### Running with Docker Compose (recommended)
 
-Docker Compose allows you to start the application and PostgreSQL database together.
+Docker Compose starts the application with an ephemeral SQLite cache inside the container.
 
 ```bash
 # Build and start containers
@@ -210,28 +211,21 @@ docker compose logs -f
 
 # Stop containers
 docker compose down
-
-# Completely remove including database volume
-docker compose down -v
 ```
 
-#### Switching environments
+#### Cache path
 
-You can switch between local PostgreSQL and managed PostgreSQL providers by changing `DATABASE_URL` in the `.env` file. Include provider-specific options such as `sslmode=require` directly in the connection string:
+The default cache path is `/tmp/tokei-api/tokei-api.sqlite3`. This is intentionally ephemeral for deployments where recomputing cached analyses is acceptable:
 
 ```
-# For local development (PostgreSQL in Docker Compose)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tokei-api
-
-# For managed PostgreSQL providers such as Koyeb or Neon
-# DATABASE_URL=postgresql://username:password@hostname/database?sslmode=require
+CACHE_DB_PATH=/tmp/tokei-api/tokei-api.sqlite3
 ```
 
 ## Technology Stack
 
 - **Language:** Crystal
 - **Framework:** Kemal
-- **Database:** PostgreSQL (Neon)
+- **Database:** SQLite
 - **Frontend:** Bootstrap, Chart.js
 - **Other:** tokei, Git
 

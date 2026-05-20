@@ -13,8 +13,8 @@ crystal: ">= 1.15.1"
 dependencies:
   kemal:
     github: kemalcr/kemal
-  pg:
-    github: will/crystal-pg
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
   dotenv:
     github: gdotdesign/cr-dotenv
 

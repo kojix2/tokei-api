@@ -33,15 +33,30 @@ module Tokei::Api::Models
       extract_stats_from_result
     end
 
-    # Delete analyses older than the retention period (default: 30 days)
+    ANALYSIS_COLUMNS         = "id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio"
+    ANALYSIS_SUMMARY_COLUMNS = "id, repo_url, analyzed_at, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio"
+
+    def self.timestamp(time : Time) : String
+      time.to_rfc3339(fraction_digits: 0)
+    end
+
+    private def self.parse_timestamp(value : String) : Time
+      Time.parse_rfc3339(value)
+    end
+
+    private def self.read_optional_i32(result_set) : Int32?
+      result_set.read(Int64?).try(&.to_i32)
+    end
+
+    # Delete analyses older than the retention period (default: 7 days)
     # Can be configured via RETENTION_DAYS environment variable
     def self.cleanup_old_data : Int64
-      # Get retention days from environment variable or use default (30 days)
-      retention_days = ENV["RETENTION_DAYS"]?.try(&.to_i?) || 30
+      # Get retention days from environment variable or use default (7 days)
+      retention_days = ENV["RETENTION_DAYS"]?.try(&.to_i?) || 7
 
       conn = Tokei::Api::Config::Database.connection
       begin
-        result = conn.exec("DELETE FROM analyses WHERE analyzed_at < $1", Time.utc - retention_days.days)
+        result = conn.exec("DELETE FROM analyses WHERE analyzed_at < ?", timestamp(Time.utc - retention_days.days))
         result.rows_affected
       ensure
         conn.close
@@ -90,20 +105,19 @@ module Tokei::Api::Models
       conn = Tokei::Api::Config::Database.connection
       begin
         if id.nil?
+          now = Time.utc
+          @id = UUID.random
+          @analyzed_at = now
+
           # Create new with statistics
-          conn.query(
-            "INSERT INTO analyses (repo_url, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, analyzed_at",
-            @repo_url, @result.to_json, @total_lines, @total_code, @total_comments, @total_blanks, @top_language, @top_language_lines, @language_count, @code_comment_ratio
-          ) do |result_set|
-            if result_set.move_next
-              @id = result_set.read(UUID)
-              @analyzed_at = result_set.read(Time)
-            end
-          end
+          conn.exec(
+            "INSERT INTO analyses (id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            @id.to_s, @repo_url, self.class.timestamp(now), @result.to_json, @total_lines, @total_code, @total_comments, @total_blanks, @top_language, @top_language_lines, @language_count, @code_comment_ratio
+          )
         else
           # Update with statistics
           conn.exec(
-            "UPDATE analyses SET repo_url = $1, result = $2, total_lines = $3, total_code = $4, total_comments = $5, total_blanks = $6, top_language = $7, top_language_lines = $8, language_count = $9, code_comment_ratio = $10 WHERE id = $11",
+            "UPDATE analyses SET repo_url = ?, result = ?, total_lines = ?, total_code = ?, total_comments = ?, total_blanks = ?, top_language = ?, top_language_lines = ?, language_count = ?, code_comment_ratio = ? WHERE id = ?",
             @repo_url, @result.to_json, @total_lines, @total_code, @total_comments, @total_blanks, @top_language, @top_language_lines, @language_count, @code_comment_ratio, @id.to_s
           )
         end
@@ -121,25 +135,25 @@ module Tokei::Api::Models
       conn = Tokei::Api::Config::Database.connection
       begin
         analyses = [] of Analysis
-        conn.query("SELECT id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE repo_url = $1 ORDER BY analyzed_at DESC", repo_url) do |result_set|
+        conn.query("SELECT #{ANALYSIS_COLUMNS} FROM analyses WHERE repo_url = ? ORDER BY analyzed_at DESC", repo_url) do |result_set|
           result_set.each do
-            id_value = result_set.read(UUID)
+            id_value = UUID.new(result_set.read(String))
             repo_url = result_set.read(String)
-            analyzed_at = result_set.read(Time)
-            result = result_set.read(JSON::Any)
+            analyzed_at = parse_timestamp(result_set.read(String))
+            result = JSON.parse(result_set.read(String))
 
             analysis = Analysis.new(repo_url, result)
             analysis.id = id_value
             analysis.analyzed_at = analyzed_at
 
             # Read statistics from database if available
-            analysis.total_lines = result_set.read(Int32?)
-            analysis.total_code = result_set.read(Int32?)
-            analysis.total_comments = result_set.read(Int32?)
-            analysis.total_blanks = result_set.read(Int32?)
+            analysis.total_lines = read_optional_i32(result_set)
+            analysis.total_code = read_optional_i32(result_set)
+            analysis.total_comments = read_optional_i32(result_set)
+            analysis.total_blanks = read_optional_i32(result_set)
             analysis.top_language = result_set.read(String?)
-            analysis.top_language_lines = result_set.read(Int32?)
-            analysis.language_count = result_set.read(Int32?)
+            analysis.top_language_lines = read_optional_i32(result_set)
+            analysis.language_count = read_optional_i32(result_set)
             analysis.code_comment_ratio = result_set.read(Float64?)
 
             analyses << analysis
@@ -157,22 +171,22 @@ module Tokei::Api::Models
       conn = Tokei::Api::Config::Database.connection
       begin
         analysis = nil
-        conn.query("SELECT id, repo_url, analyzed_at, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE repo_url = $1 ORDER BY analyzed_at DESC LIMIT 1", repo_url) do |result_set|
+        conn.query("SELECT #{ANALYSIS_SUMMARY_COLUMNS} FROM analyses WHERE repo_url = ? ORDER BY analyzed_at DESC LIMIT 1", repo_url) do |result_set|
           if result_set.move_next
-            id_value = result_set.read(UUID)
+            id_value = UUID.new(result_set.read(String))
             repo_url = result_set.read(String)
-            analyzed_at = result_set.read(Time)
+            analyzed_at = parse_timestamp(result_set.read(String))
 
             record = Analysis.new(repo_url, EMPTY_RESULT_JSON)
             record.id = id_value
             record.analyzed_at = analyzed_at
-            record.total_lines = result_set.read(Int32?)
-            record.total_code = result_set.read(Int32?)
-            record.total_comments = result_set.read(Int32?)
-            record.total_blanks = result_set.read(Int32?)
+            record.total_lines = read_optional_i32(result_set)
+            record.total_code = read_optional_i32(result_set)
+            record.total_comments = read_optional_i32(result_set)
+            record.total_blanks = read_optional_i32(result_set)
             record.top_language = result_set.read(String?)
-            record.top_language_lines = result_set.read(Int32?)
-            record.language_count = result_set.read(Int32?)
+            record.top_language_lines = read_optional_i32(result_set)
+            record.language_count = read_optional_i32(result_set)
             record.code_comment_ratio = result_set.read(Float64?)
             analysis = record
           end
@@ -189,23 +203,23 @@ module Tokei::Api::Models
       conn = Tokei::Api::Config::Database.connection
       begin
         analysis = nil
-        conn.query("SELECT id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE repo_url = $1 ORDER BY analyzed_at DESC LIMIT 1", repo_url) do |result_set|
+        conn.query("SELECT #{ANALYSIS_COLUMNS} FROM analyses WHERE repo_url = ? ORDER BY analyzed_at DESC LIMIT 1", repo_url) do |result_set|
           if result_set.move_next
-            id_value = result_set.read(UUID)
+            id_value = UUID.new(result_set.read(String))
             repo_url = result_set.read(String)
-            analyzed_at = result_set.read(Time)
-            result = result_set.read(JSON::Any)
+            analyzed_at = parse_timestamp(result_set.read(String))
+            result = JSON.parse(result_set.read(String))
 
             record = Analysis.new(repo_url, result)
             record.id = id_value
             record.analyzed_at = analyzed_at
-            record.total_lines = result_set.read(Int32?)
-            record.total_code = result_set.read(Int32?)
-            record.total_comments = result_set.read(Int32?)
-            record.total_blanks = result_set.read(Int32?)
+            record.total_lines = read_optional_i32(result_set)
+            record.total_code = read_optional_i32(result_set)
+            record.total_comments = read_optional_i32(result_set)
+            record.total_blanks = read_optional_i32(result_set)
             record.top_language = result_set.read(String?)
-            record.top_language_lines = result_set.read(Int32?)
-            record.language_count = result_set.read(Int32?)
+            record.top_language_lines = read_optional_i32(result_set)
+            record.language_count = read_optional_i32(result_set)
             record.code_comment_ratio = result_set.read(Float64?)
             analysis = record
           end
@@ -222,22 +236,22 @@ module Tokei::Api::Models
       conn = Tokei::Api::Config::Database.connection
       begin
         analysis = nil
-        conn.query("SELECT id, repo_url, analyzed_at, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE id = $1", id) do |result_set|
+        conn.query("SELECT #{ANALYSIS_SUMMARY_COLUMNS} FROM analyses WHERE id = ?", id) do |result_set|
           if result_set.move_next
-            id_value = result_set.read(UUID)
+            id_value = UUID.new(result_set.read(String))
             repo_url = result_set.read(String)
-            analyzed_at = result_set.read(Time)
+            analyzed_at = parse_timestamp(result_set.read(String))
 
             record = Analysis.new(repo_url, EMPTY_RESULT_JSON)
             record.id = id_value
             record.analyzed_at = analyzed_at
-            record.total_lines = result_set.read(Int32?)
-            record.total_code = result_set.read(Int32?)
-            record.total_comments = result_set.read(Int32?)
-            record.total_blanks = result_set.read(Int32?)
+            record.total_lines = read_optional_i32(result_set)
+            record.total_code = read_optional_i32(result_set)
+            record.total_comments = read_optional_i32(result_set)
+            record.total_blanks = read_optional_i32(result_set)
             record.top_language = result_set.read(String?)
-            record.top_language_lines = result_set.read(Int32?)
-            record.language_count = result_set.read(Int32?)
+            record.top_language_lines = read_optional_i32(result_set)
+            record.language_count = read_optional_i32(result_set)
             record.code_comment_ratio = result_set.read(Float64?)
             analysis = record
           end
@@ -253,25 +267,25 @@ module Tokei::Api::Models
       conn = Tokei::Api::Config::Database.connection
       begin
         analysis = nil
-        conn.query("SELECT id, repo_url, analyzed_at, result, total_lines, total_code, total_comments, total_blanks, top_language, top_language_lines, language_count, code_comment_ratio FROM analyses WHERE id = $1", id) do |result_set|
+        conn.query("SELECT #{ANALYSIS_COLUMNS} FROM analyses WHERE id = ?", id) do |result_set|
           if result_set.move_next
-            id_value = result_set.read(UUID)
+            id_value = UUID.new(result_set.read(String))
             repo_url = result_set.read(String)
-            analyzed_at = result_set.read(Time)
-            result = result_set.read(JSON::Any)
+            analyzed_at = parse_timestamp(result_set.read(String))
+            result = JSON.parse(result_set.read(String))
 
             analysis = Analysis.new(repo_url, result)
             analysis.id = id_value
             analysis.analyzed_at = analyzed_at
 
             # Read statistics from database if available
-            analysis.total_lines = result_set.read(Int32?)
-            analysis.total_code = result_set.read(Int32?)
-            analysis.total_comments = result_set.read(Int32?)
-            analysis.total_blanks = result_set.read(Int32?)
+            analysis.total_lines = read_optional_i32(result_set)
+            analysis.total_code = read_optional_i32(result_set)
+            analysis.total_comments = read_optional_i32(result_set)
+            analysis.total_blanks = read_optional_i32(result_set)
             analysis.top_language = result_set.read(String?)
-            analysis.top_language_lines = result_set.read(Int32?)
-            analysis.language_count = result_set.read(Int32?)
+            analysis.top_language_lines = read_optional_i32(result_set)
+            analysis.language_count = read_optional_i32(result_set)
             analysis.code_comment_ratio = result_set.read(Float64?)
           end
         end

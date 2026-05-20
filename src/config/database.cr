@@ -1,5 +1,7 @@
-require "pg"
+require "db"
+require "sqlite3"
 require "dotenv"
+require "file_utils"
 
 module Tokei::Api::Config
   # Module for managing database connections
@@ -7,18 +9,24 @@ module Tokei::Api::Config
     # Load environment variables
     Dotenv.load if File.exists?(".env") && ENV["CRYSTAL_ENV"]? != "test"
 
-    # Database connection URL
-    DATABASE_URL = ENV["DATABASE_URL"]? || "postgresql://localhost/tokei-api"
+    # SQLite cache database path. The default lives under /tmp so the cache is
+    # intentionally discarded when the instance is replaced.
+    CACHE_DB_PATH = ENV["CACHE_DB_PATH"]? || "/tmp/tokei-api/tokei-api.sqlite3"
 
     # Get database connection
     def self.connection
-      # Attempt connection
-      begin
-        PG.connect(DATABASE_URL)
-      rescue ex
-        puts "Database connection error: #{ex.message}"
-        raise ex
-      end
+      prepare_database_path
+      db = DB.open("sqlite3:#{CACHE_DB_PATH}")
+      db.exec "PRAGMA busy_timeout = 5000;"
+      db
+    rescue ex
+      puts "Database connection error: #{ex.message}"
+      raise ex
+    end
+
+    private def self.prepare_database_path
+      dir = File.dirname(CACHE_DB_PATH)
+      FileUtils.mkdir_p(dir) unless dir == "." || Dir.exists?(dir)
     end
 
     # Initialize database (create tables, etc.)
@@ -27,13 +35,15 @@ module Tokei::Api::Config
 
       conn = connection
       begin
-        # Create analyses table if it doesn't exist (execute SQL commands separately)
+        conn.exec "PRAGMA journal_mode = WAL;"
+
+        # Create analyses table if it doesn't exist.
         conn.exec <<-SQL
           CREATE TABLE IF NOT EXISTS analyses (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            id TEXT PRIMARY KEY,
             repo_url TEXT NOT NULL,
-            analyzed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            result JSONB NOT NULL,
+            analyzed_at TEXT NOT NULL,
+            result TEXT NOT NULL,
             total_lines INTEGER,
             total_code INTEGER,
             total_comments INTEGER,

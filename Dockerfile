@@ -9,7 +9,7 @@ RUN cargo install tokei
 # === Stage 2: Build Crystal app on Alpine ===
 FROM crystallang/crystal:1-alpine AS crystal-builder
 
-RUN apk add --no-cache git postgresql-client
+RUN apk add --no-cache git sqlite-dev
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN crystal build --release src/main.cr -o /app/tokei-api
 # === Final Stage: Minimal runtime ===
 FROM alpine:latest
 
-RUN apk add --no-cache git libpq libgcc libgc++ pcre2 \
+RUN apk add --no-cache git sqlite-libs libgcc libgc++ pcre2 \
 	rsvg-convert fontconfig freetype ttf-dejavu
 
 WORKDIR /app
