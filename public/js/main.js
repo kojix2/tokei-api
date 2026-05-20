@@ -27,13 +27,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const repoForm = document.querySelector('form[action="/analyses"]');
   if (repoForm) {
     repoForm.addEventListener("submit", function (e) {
-      const repoUrl = document.getElementById("repo_url").value.trim();
-
       // Display during submission
       const submitBtn = repoForm.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML =
-        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analyzing...';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.replaceChildren(createSpinner(), document.createTextNode(" Analyzing..."));
+      }
     });
   }
 
@@ -88,6 +87,14 @@ function fillExampleRepo(event) {
 
   repoUrlInput.value = "https://github.com/kojix2/tokei-api";
   repoUrlInput.focus();
+}
+
+function createSpinner() {
+  const spinner = document.createElement("span");
+  spinner.classList.add("spinner-border", "spinner-border-sm");
+  spinner.setAttribute("role", "status");
+  spinner.setAttribute("aria-hidden", "true");
+  return spinner;
 }
 
 // Setup toggle functionality for language rows
@@ -299,6 +306,8 @@ function sortDetailTable(tbody, columnIndex, direction, dataType) {
 }
 
 function cssEscape(value) {
+  value = String(value || "");
+
   if (typeof CSS !== "undefined" && CSS.escape) {
     return CSS.escape(value);
   }
@@ -340,9 +349,13 @@ function initializeResultCharts() {
   if (!resultJsonTemplate || !languageCanvas || !codeTypeCanvas) return;
   if (typeof Chart === "undefined") return;
 
+  const resultJsonText = resultJsonTemplate.content
+    ? resultJsonTemplate.content.textContent
+    : resultJsonTemplate.textContent;
+
   let resultJson;
   try {
-    resultJson = JSON.parse(resultJsonTemplate.textContent);
+    resultJson = JSON.parse(resultJsonText);
   } catch (e) {
     console.error("Failed to parse analysis result JSON:", e);
     return;
