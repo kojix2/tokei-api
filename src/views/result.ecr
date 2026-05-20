@@ -94,7 +94,7 @@
                   <td><%= blanks %></td>
                   <td><%= code + comments + blanks %></td>
                 </tr>
-                <tr class="file-details-row" data-language="<%= HTML.escape(language) %>" style="display: none;">
+                <tr class="file-details-row d-none" data-language="<%= HTML.escape(language) %>">
                   <td colspan="6" class="p-0">
                     <div class="file-details-container p-3">
                       <table class="table table-sm file-details-table">
@@ -189,8 +189,8 @@
               </div>
               <div class="col-md-6">
                 <div class="input-group">
-                  <input type="text" class="form-control" value="<%= total_lines_md %>" readonly>
-                  <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('<%= total_lines_md %>', this)">
+                  <input type="text" class="form-control" value="<%= HTML.escape(total_lines_md) %>" readonly>
+                  <button class="btn btn-outline-secondary js-copy-button" type="button" data-copy-text="<%= HTML.escape(total_lines_md) %>">
                     Copy
                   </button>
                 </div>
@@ -207,8 +207,8 @@
               </div>
               <div class="col-md-6">
                 <div class="input-group">
-                  <input type="text" class="form-control" value="<%= top_language_md %>" readonly>
-                  <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('<%= top_language_md %>', this)">
+                  <input type="text" class="form-control" value="<%= HTML.escape(top_language_md) %>" readonly>
+                  <button class="btn btn-outline-secondary js-copy-button" type="button" data-copy-text="<%= HTML.escape(top_language_md) %>">
                     Copy
                   </button>
                 </div>
@@ -225,8 +225,8 @@
               </div>
               <div class="col-md-6">
                 <div class="input-group">
-                  <input type="text" class="form-control" value="<%= language_count_md %>" readonly>
-                  <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('<%= language_count_md %>', this)">
+                  <input type="text" class="form-control" value="<%= HTML.escape(language_count_md) %>" readonly>
+                  <button class="btn btn-outline-secondary js-copy-button" type="button" data-copy-text="<%= HTML.escape(language_count_md) %>">
                     Copy
                   </button>
                 </div>
@@ -243,8 +243,8 @@
               </div>
               <div class="col-md-6">
                 <div class="input-group">
-                  <input type="text" class="form-control" value="<%= code_comment_ratio_md %>" readonly>
-                  <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('<%= code_comment_ratio_md %>', this)">
+                  <input type="text" class="form-control" value="<%= HTML.escape(code_comment_ratio_md) %>" readonly>
+                  <button class="btn btn-outline-secondary js-copy-button" type="button" data-copy-text="<%= HTML.escape(code_comment_ratio_md) %>">
                     Copy
                   </button>
                 </div>
@@ -273,96 +273,4 @@
   </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Chart for lines of code by language
-  const languageData = {};
-  const resultJson = <%= analysis.result.to_json %>;
-
-  // Prepare data
-  Object.entries(resultJson).forEach(([language, stats]) => {
-    if (language !== 'Total') {
-      languageData[language] = stats.code || 0;
-    }
-  });
-
-  // Extract top 10 languages (by lines of code)
-  const topLanguages = Object.entries(languageData)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
-
-  // Separate language names and line counts
-  const languageNames = topLanguages.map(item => item[0]);
-  const codeCounts = topLanguages.map(item => item[1]);
-
-  // Generate random colors
-  const generateColors = (count) => {
-    const colors = [];
-    for (let i = 0; i < count; i++) {
-      const hue = (i * 360 / count) % 360;
-      colors.push(`hsl(${hue}, 70%, 60%)`);
-    }
-    return colors;
-  };
-
-  // Language chart
-  const languageCtx = document.getElementById('languageChart').getContext('2d');
-  new Chart(languageCtx, {
-    type: 'bar',
-    data: {
-      labels: languageNames,
-      datasets: [{
-        label: 'Lines of Code',
-        data: codeCounts,
-        backgroundColor: generateColors(languageNames.length),
-        borderWidth: 1
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 2,
-      scales: {
-        x: {
-          beginAtZero: true
-        }
-      }
-    }
-  });
-
-  // Code, comments, and blank lines ratio chart
-  let totalCode = 0;
-  let totalComments = 0;
-  let totalBlanks = 0;
-
-  Object.values(resultJson).forEach(stats => {
-    if (typeof stats === 'object') {
-      totalCode += stats.code || 0;
-      totalComments += stats.comments || 0;
-      totalBlanks += stats.blanks || 0;
-    }
-  });
-
-  const codeTypeCtx = document.getElementById('codeTypeChart').getContext('2d');
-  new Chart(codeTypeCtx, {
-    type: 'pie',
-    data: {
-      labels: ['Code', 'Comments', 'Blanks'],
-      datasets: [{
-        data: [totalCode, totalComments, totalBlanks],
-        backgroundColor: ['#4CAF50', '#2196F3', '#FFC107'],
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'bottom'
-        }
-      }
-    }
-  });
-});
-</script>
+<template id="analysis-result-json"><%= HTML.escape(analysis.result.to_json) %></template>

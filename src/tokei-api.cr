@@ -15,8 +15,8 @@ module Tokei::Api
                "frame-ancestors 'none'; " +
                "object-src 'none'; " +
                "form-action 'self'; " +
-               "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; " +
-               "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; " +
+               "script-src 'self' https://cdn.jsdelivr.net; " +
+               "style-src 'self' https://cdn.jsdelivr.net; " +
                "img-src 'self' data: https:; " +
                "font-src 'self' https://cdn.jsdelivr.net data:; " +
                "connect-src 'self'"

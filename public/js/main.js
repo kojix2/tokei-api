@@ -2,44 +2,6 @@
  * JavaScript file for tokei-api
  */
 
-// Function to fill the repository URL input with the example URL
-function fillExampleRepo(event) {
-  event.preventDefault();
-  const repoUrlInput = document.getElementById("repo_url");
-  repoUrlInput.value = "https://github.com/kojix2/tokei-api";
-  repoUrlInput.focus();
-}
-
-// Styles for table sorting
-document.head.insertAdjacentHTML(
-  "beforeend",
-  `
-  <style>
-    .sortable {
-      cursor: pointer;
-      user-select: none;
-    }
-    .sortable:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-    .sort-icon {
-      opacity: 0.5;
-      display: inline-block;
-      margin-left: 5px;
-    }
-    .sort-asc .sort-icon::after {
-      content: "↑";
-    }
-    .sort-desc .sort-icon::after {
-      content: "↓";
-    }
-    .sort-asc .sort-icon, .sort-desc .sort-icon {
-      opacity: 1;
-    }
-  </style>
-`
-);
-
 // Reset Analyze button state when navigating back
 window.addEventListener("pageshow", function (event) {
   if (event.persisted) {
@@ -56,7 +18,11 @@ window.addEventListener("pageshow", function (event) {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-  
+  const exampleRepoLink = document.getElementById("example-repo-link");
+  if (exampleRepoLink) {
+    exampleRepoLink.addEventListener("click", fillExampleRepo);
+  }
+
   // Form submission handling
   const repoForm = document.querySelector('form[action="/analyses"]');
   if (repoForm) {
@@ -111,7 +77,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Initialize and perform initial sort on main language table
   initializeMainTableSort();
+  setupCopyButtons();
+  initializeResultCharts();
 });
+
+function fillExampleRepo(event) {
+  event.preventDefault();
+  const repoUrlInput = document.getElementById("repo_url");
+  if (!repoUrlInput) return;
+
+  repoUrlInput.value = "https://github.com/kojix2/tokei-api";
+  repoUrlInput.focus();
+}
 
 // Setup toggle functionality for language rows
 function setupLanguageRowToggles() {
@@ -128,22 +105,23 @@ function setupLanguageRowToggles() {
       e.stopPropagation();
 
       const language = row.dataset.language;
+      const escapedLanguage = cssEscape(language);
       const fileDetailsRow = document.querySelector(
-        `.file-details-row[data-language="${language}"]`
+        `.file-details-row[data-language="${escapedLanguage}"]`
       );
       if (!fileDetailsRow) return;
 
       // Toggle visibility
-      const isExpanded = fileDetailsRow.style.display !== "none";
+      const isExpanded = !fileDetailsRow.classList.contains("d-none");
 
       if (isExpanded) {
         // Collapse
-        fileDetailsRow.style.display = "none";
+        fileDetailsRow.classList.add("d-none");
         toggleIcon.textContent = "▶";
         row.classList.remove("active-language-row");
       } else {
         // Expand
-        fileDetailsRow.style.display = "table-row";
+        fileDetailsRow.classList.remove("d-none");
         toggleIcon.textContent = "▼";
         row.classList.add("active-language-row");
 
@@ -256,8 +234,9 @@ function sortMainTable(tbody, columnIndex, direction, dataType) {
   const rowPairs = {};
   languageRows.forEach((row) => {
     const language = row.dataset.language;
+    const escapedLanguage = cssEscape(language);
     const detailRow = tbody.querySelector(
-      `.file-details-row[data-language="${language}"]`
+      `.file-details-row[data-language="${escapedLanguage}"]`
     );
     if (detailRow) {
       rowPairs[language] = { languageRow: row, detailRow: detailRow };
@@ -319,6 +298,22 @@ function sortDetailTable(tbody, columnIndex, direction, dataType) {
   });
 }
 
+function cssEscape(value) {
+  if (typeof CSS !== "undefined" && CSS.escape) {
+    return CSS.escape(value);
+  }
+
+  return value.replace(/["\\]/g, "\\$&");
+}
+
+function setupCopyButtons() {
+  document.querySelectorAll(".js-copy-button").forEach((button) => {
+    button.addEventListener("click", function () {
+      copyToClipboard(button.dataset.copyText || "", button);
+    });
+  });
+}
+
 // Copy button functionality
 function copyToClipboard(text, buttonElement) {
   navigator.clipboard.writeText(text).then(
@@ -335,4 +330,103 @@ function copyToClipboard(text, buttonElement) {
       alert("Failed to copy to clipboard.");
     }
   );
+}
+
+function initializeResultCharts() {
+  const resultJsonTemplate = document.getElementById("analysis-result-json");
+  const languageCanvas = document.getElementById("languageChart");
+  const codeTypeCanvas = document.getElementById("codeTypeChart");
+
+  if (!resultJsonTemplate || !languageCanvas || !codeTypeCanvas) return;
+  if (typeof Chart === "undefined") return;
+
+  let resultJson;
+  try {
+    resultJson = JSON.parse(resultJsonTemplate.textContent);
+  } catch (e) {
+    console.error("Failed to parse analysis result JSON:", e);
+    return;
+  }
+
+  const languageData = {};
+  Object.entries(resultJson).forEach(([language, stats]) => {
+    if (language !== "Total") {
+      languageData[language] = stats.code || 0;
+    }
+  });
+
+  const topLanguages = Object.entries(languageData)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  const languageNames = topLanguages.map((item) => item[0]);
+  const codeCounts = topLanguages.map((item) => item[1]);
+
+  new Chart(languageCanvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: languageNames,
+      datasets: [
+        {
+          label: "Lines of Code",
+          data: codeCounts,
+          backgroundColor: generateChartColors(languageNames.length),
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2,
+      scales: {
+        x: {
+          beginAtZero: true,
+        },
+      },
+    },
+  });
+
+  let totalCode = 0;
+  let totalComments = 0;
+  let totalBlanks = 0;
+
+  Object.values(resultJson).forEach((stats) => {
+    if (stats && typeof stats === "object") {
+      totalCode += stats.code || 0;
+      totalComments += stats.comments || 0;
+      totalBlanks += stats.blanks || 0;
+    }
+  });
+
+  new Chart(codeTypeCanvas.getContext("2d"), {
+    type: "pie",
+    data: {
+      labels: ["Code", "Comments", "Blanks"],
+      datasets: [
+        {
+          data: [totalCode, totalComments, totalBlanks],
+          backgroundColor: ["#4CAF50", "#2196F3", "#FFC107"],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "bottom",
+        },
+      },
+    },
+  });
+}
+
+function generateChartColors(count) {
+  const colors = [];
+  for (let i = 0; i < count; i++) {
+    const hue = ((i * 360) / count) % 360;
+    colors.push(`hsl(${hue}, 70%, 60%)`);
+  }
+  return colors;
 }

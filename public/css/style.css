@@ -178,6 +178,21 @@ h4 {
   color: white;
 }
 
+.card-header-primary {
+  background: var(--gradient-primary) !important;
+  color: white;
+}
+
+.card-header-success {
+  background: var(--gradient-success) !important;
+  color: white;
+}
+
+.card-header-info {
+  background: var(--gradient-info) !important;
+  color: white;
+}
+
 /* Form */
 .form-label {
   color: var(--color-text-primary);
@@ -322,6 +337,31 @@ h4 {
 
 .sortable {
   background-color: transparent;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sort-icon {
+  opacity: 0.5;
+  display: inline-block;
+  margin-left: 5px;
+}
+
+.sort-asc .sort-icon,
+.sort-desc .sort-icon {
+  opacity: 1;
+}
+
+.sort-asc .sort-icon::after {
+  content: "↑";
+}
+
+.sort-desc .sort-icon::after {
+  content: "↓";
 }
 
 /* Language and file details rows */

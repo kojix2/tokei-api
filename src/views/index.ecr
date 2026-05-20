@@ -2,7 +2,7 @@
   <div class="row justify-content-center">
     <div class="col-md-10">
       <div class="card shadow-sm border-0 rounded-3 mb-5">
-        <div class="card-header py-3" style="background: linear-gradient(135deg, #6e42d3 0%, #4b79cf 100%); color: white;">
+        <div class="card-header card-header-primary py-3">
           <h1 class="page-title">Code Line Counter</h1>
         </div>
         <div class="card-body p-4">
@@ -20,10 +20,10 @@
                       <input type="text" class="form-control form-control-lg" id="repo_url" name="url" placeholder="https://github.com/username/repository.git" required>
                     </div>
                     <div class="col-md-3">
-                      <button type="submit" class="btn btn-lg w-100 h-100" style="background: linear-gradient(135deg, #6e42d3 0%, #4b79cf 100%); color: white;" data-initial-label="Analyze">Analyze</button>
+                      <button type="submit" class="btn btn-primary btn-lg w-100 h-100" data-initial-label="Analyze">Analyze</button>
                     </div>
                   </div>
-                  <div class="form-text mt-2">Example: <a href="#" class="text-decoration-none" id="example-repo-link" onclick="fillExampleRepo(event)">https://github.com/kojix2/tokei-api</a></div>
+                  <div class="form-text mt-2">Example: <a href="#" class="text-decoration-none" id="example-repo-link">https://github.com/kojix2/tokei-api</a></div>
                 </div>
               </form>
             </div>
@@ -47,7 +47,7 @@
   <div class="row justify-content-center">
     <div class="col-md-5 mb-4">
       <div class="card shadow-sm border-0 rounded-3 h-100">
-        <div class="card-header py-3" style="background: linear-gradient(135deg, #2e8b57 0%, #3cb371 100%); color: white;">
+        <div class="card-header card-header-success py-3">
           <h2 class="section-title">GitHub Direct Access</h2>
         </div>
         <div class="card-body p-4">
@@ -66,7 +66,7 @@
 
     <div class="col-md-5 mb-4">
       <div class="card shadow-sm border-0 rounded-3 h-100">
-        <div class="card-header py-3" style="background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%); color: white;">
+        <div class="card-header card-header-info py-3">
           <h2 class="section-title">API</h2>
         </div>
         <div class="card-body p-4">
@@ -79,7 +79,7 @@
             <li>Access GitHub repositories directly</li>
           </ul>
           <div class="mt-4">
-            <a href="/api" class="btn" style="background: linear-gradient(135deg, #1e90ff 0%, #00bfff 100%); color: white;">View API</a>
+            <a href="/api" class="btn btn-info">View API</a>
           </div>
         </div>
       </div>
