@@ -19,12 +19,9 @@ module Tokei::Api::Controllers
       !!(ua =~ /Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Mastodon|Line|iMessage/i)
     end
 
-    # Build absolute base URL based on headers or ENV
-    private def self.base_url(env : HTTP::Server::Context) : String
-      return ENV["BASE_URL"] if ENV["BASE_URL"]?
-      scheme = env.request.headers["X-Forwarded-Proto"]? || ENV["DEFAULT_SCHEME"]? || "https"
-      host = env.request.headers["X-Forwarded-Host"]? || env.request.headers["Host"]? || "localhost"
-      "#{scheme}://#{host}"
+    # Build absolute base URL from trusted configuration only.
+    private def self.base_url : String
+      ENV["BASE_URL"]? || "http://localhost:#{ENV["PORT"]?.try(&.to_i) || 3000}"
     end
 
     # Process analyze request (common logic for GET and POST)
@@ -155,7 +152,7 @@ module Tokei::Api::Controllers
         end
 
         if social_bot?(env.request.headers["User-Agent"]?)
-          base = base_url(env)
+          base = base_url
           safe_owner = HTML.escape(owner)
           safe_repo = HTML.escape(repo)
           image = "#{base}/og/github/#{owner}/#{repo}?format=png"

@@ -84,6 +84,7 @@ Available badge types: `lines`, `language`, `languages`, `ratio`
    Key environment variables:
 
    - `CACHE_DB_PATH`: SQLite cache database path
+   - `BASE_URL`: Canonical public URL used for generated absolute links, OG tags, and badge URLs. Set this in production, for example `https://tokei.kojix2.net`.
    - `TEMP_DIR`: Directory for temporary git clones
    - `CLONE_TIMEOUT_SECONDS`: Timeout for git clone operations (default: 30)
    - `RETENTION_DAYS`: Number of days to retain analysis data (default: 7)
@@ -182,7 +183,7 @@ CREATE TABLE analyses (
 1. Create a Koyeb account
 2. Create a new application
 3. Connect your GitHub repository
-4. Set environment variables. By default, `CACHE_DB_PATH` uses `/tmp/tokei-api/tokei-api.sqlite3`, so the SQLite cache is discarded when the instance is replaced.
+4. Set environment variables. Set `BASE_URL` to the canonical public URL for the service. By default, `CACHE_DB_PATH` uses `/tmp/tokei-api/tokei-api.sqlite3`, so the SQLite cache is discarded when the instance is replaced.
 5. Run a single instance when using SQLite file storage.
 6. Execute deployment
 
