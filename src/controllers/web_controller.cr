@@ -1,5 +1,6 @@
 require "kemal"
 require "../services/tokei_service"
+require "../services/analysis_service"
 require "../services/log_service"
 require "../models/analysis"
 require "../views/renderer"
@@ -26,10 +27,6 @@ module Tokei::Api::Controllers
       Tokei::Api::Services::LogService.error_exception(event, ex, fields)
     end
 
-    private def self.log_cache_event(event : String, repo_url : String, req_id : String, analysis = nil) : Nil
-      Tokei::Api::Services::LogService.cache_event(event, repo_url, req_id, analysis)
-    end
-
     # Detect common social preview bots (Twitter, Facebook, LinkedIn, Slack, Discord, etc.)
     private def self.social_bot?(ua : String?) : Bool
       return false unless ua
@@ -50,24 +47,7 @@ module Tokei::Api::Controllers
         return Tokei::Api::Views::Renderer.render_index(error_message)
       end
 
-      # Search latest analysis result using lightweight summary query
-      recent_analysis = Tokei::Api::Models::Analysis.find_latest_by_repo_url(repo_url)
-
-      if recent_analysis && recent_analysis.analyzed_at.try(&.> Time.utc - 24.hours)
-        # Use recent analysis results if available
-        log_cache_event("analysis.cache.hit", repo_url, req_id, recent_analysis)
-        analysis = recent_analysis
-      else
-        log_cache_event("analysis.cache.miss", repo_url, req_id, recent_analysis)
-
-        # Analyze repository
-        result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url, req_id)
-
-        # Save to database
-        analysis = Tokei::Api::Models::Analysis.new(repo_url: repo_url, result: result)
-        saved = analysis.save
-        raise "Failed to persist analysis result" unless saved && analysis.id
-      end
+      analysis = Tokei::Api::Services::AnalysisService.get_for_repo(repo_url, req_id)
 
       # Redirect to results page
       env.redirect "/analyses/#{analysis.id}"

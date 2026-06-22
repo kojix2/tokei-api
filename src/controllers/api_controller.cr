@@ -1,6 +1,7 @@
 require "kemal"
 require "json"
 require "../services/tokei_service"
+require "../services/analysis_service"
 require "../services/language_stats_service"
 require "../services/badge_service"
 require "../services/log_service"
@@ -50,10 +51,6 @@ module Tokei::Api::Controllers
       Tokei::Api::Services::LogService.request_id(env)
     end
 
-    private def self.log_cache_event(event : String, repo_url : String, req_id : String, analysis = nil) : Nil
-      Tokei::Api::Services::LogService.cache_event(event, repo_url, req_id, analysis)
-    end
-
     # Badge data generation (via shared service)
     private def self.generate_badge_data(badge_type : String, analysis)
       Tokei::Api::Services::BadgeService.generate(badge_type, analysis)
@@ -61,31 +58,7 @@ module Tokei::Api::Controllers
 
     # Get the most recent analysis for a repository URL
     private def self.get_analysis_for_repo(repo_url : String, req_id : String = request_id)
-      # URL validation
-      unless Tokei::Api::Services::TokeiService.valid_repo_url?(repo_url)
-        raise "Invalid repository URL"
-      end
-
-      # Search latest analysis result using lightweight summary query
-      recent_analysis = Tokei::Api::Models::Analysis.find_latest_by_repo_url(repo_url)
-
-      # Check if we have any recent analysis results (within 24 hours)
-      if recent_analysis && recent_analysis.analyzed_at.try(&.> Time.utc - 24.hours)
-        log_cache_event("analysis.cache.hit", repo_url, req_id, recent_analysis)
-        return recent_analysis
-      end
-
-      log_cache_event("analysis.cache.miss", repo_url, req_id, recent_analysis)
-
-      # Analyze repository
-      result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url, req_id)
-
-      # Save to database
-      analysis = Tokei::Api::Models::Analysis.new(repo_url: repo_url, result: result)
-      saved = analysis.save
-      raise "Failed to persist analysis result" unless saved && analysis.id
-
-      analysis
+      Tokei::Api::Services::AnalysisService.get_for_repo(repo_url, req_id)
     end
 
     # Get analysis with full result payload when language breakdown is needed.
@@ -102,12 +75,8 @@ module Tokei::Api::Controllers
         return full_analysis
       end
 
-      # Fallback: perform analysis again if the row disappeared between queries.
-      result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url, req_id)
-      refreshed = Tokei::Api::Models::Analysis.new(repo_url: repo_url, result: result)
-      saved = refreshed.save
-      raise "Failed to persist analysis result" unless saved && refreshed.id
-      refreshed
+      # Fallback: perform analysis again via the shared lock if the row disappeared between queries.
+      get_analysis_for_repo(repo_url, req_id)
     end
 
     # Setup API endpoints
