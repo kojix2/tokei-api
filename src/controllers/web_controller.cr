@@ -18,8 +18,16 @@ module Tokei::Api::Controllers
       Tokei::Api::Services::LogService.request_id
     end
 
+    private def self.request_id(env : HTTP::Server::Context) : String
+      Tokei::Api::Services::LogService.request_id(env)
+    end
+
     private def self.log_web_error(event : String, ex : Exception, fields = {} of String => String) : Nil
       Tokei::Api::Services::LogService.error_exception(event, ex, fields)
+    end
+
+    private def self.log_cache_event(event : String, repo_url : String, req_id : String, analysis = nil) : Nil
+      Tokei::Api::Services::LogService.cache_event(event, repo_url, req_id, analysis)
     end
 
     # Detect common social preview bots (Twitter, Facebook, LinkedIn, Slack, Discord, etc.)
@@ -47,8 +55,11 @@ module Tokei::Api::Controllers
 
       if recent_analysis && recent_analysis.analyzed_at.try(&.> Time.utc - 24.hours)
         # Use recent analysis results if available
+        log_cache_event("analysis.cache.hit", repo_url, req_id, recent_analysis)
         analysis = recent_analysis
       else
+        log_cache_event("analysis.cache.miss", repo_url, req_id, recent_analysis)
+
         # Analyze repository
         result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url, req_id)
 
@@ -89,7 +100,7 @@ module Tokei::Api::Controllers
 
       # GET /analyze endpoint (for badge links) - redirect to /analyses
       get "/analyze" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         # Get repository URL from query parameters
         repo_url = env.params.query["url"]? || ""
         process_analyze_request(env, repo_url, req_id)
@@ -97,7 +108,7 @@ module Tokei::Api::Controllers
 
       # POST /analyze endpoint (form submission) - redirect to /analyses
       post "/analyze" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         # Get repository URL from form
         repo_url = env.params.body["url"]? || ""
         process_analyze_request(env, repo_url, req_id)
@@ -105,7 +116,7 @@ module Tokei::Api::Controllers
 
       # POST /analyses endpoint (form submission - new API structure)
       post "/analyses" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         # Get repository URL from form
         repo_url = env.params.body["url"]? || ""
         process_analyze_request(env, repo_url, req_id)
@@ -119,7 +130,7 @@ module Tokei::Api::Controllers
 
       # GET /analyses/:id endpoint (results display page - new API structure)
       get "/analyses/:id" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           id = env.params.url["id"]
 
@@ -164,7 +175,7 @@ module Tokei::Api::Controllers
       # - Social bots: return minimal HTML with OG tags (no redirect)
       # - Humans: run analysis then redirect to /analyses/:id
       get "/github/:owner/:repo" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         owner = env.params.url["owner"]
         repo = env.params.url["repo"]
 
@@ -252,7 +263,7 @@ module Tokei::Api::Controllers
       error 500 do |env, ex|
         env.response.content_type = "text/html"
         log_web_error("web.error.500", ex, {
-          "req_id" => request_id,
+          "req_id" => request_id(env),
           "route"  => env.request.path,
         })
         Tokei::Api::Views::Renderer.render_error("Internal Server Error")

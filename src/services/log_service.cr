@@ -9,6 +9,10 @@ module Tokei::Api::Services
       Random::Secure.hex(4)
     end
 
+    def self.request_id(env : HTTP::Server::Context) : String
+      env.get?("request_id").try(&.to_s) || request_id
+    end
+
     def self.info(event : String, fields = {} of String => String) : Nil
       log("INFO", event, stringify_fields(fields))
     end
@@ -23,6 +27,19 @@ module Tokei::Api::Services
 
     def self.error_exception(event : String, ex : Exception, fields = {} of String => String) : Nil
       error(event, stringify_fields(fields).merge(exception_fields(ex)))
+    end
+
+    def self.cache_event(event : String, repo_url : String, req_id : String, analysis = nil) : Nil
+      fields = {
+        "req_id"   => req_id,
+        "repo_url" => mask_url(repo_url),
+      }
+
+      if analysis && (analyzed_at = analysis.analyzed_at)
+        fields["age_seconds"] = (Time.utc - analyzed_at).total_seconds.round.to_i.to_s
+      end
+
+      info(event, fields)
     end
 
     def self.mask_url(url : String) : String
@@ -49,7 +66,7 @@ module Tokei::Api::Services
 
     private def self.log(level : String, event : String, fields : Hash(String, String)) : Nil
       STDERR.puts String.build { |io|
-        io << Time.utc.to_rfc3339 << " " << level << " event=" << sanitize(event).inspect
+        io << Time.utc.to_rfc3339(fraction_digits: 3) << " " << level << " event=" << sanitize(event).inspect
         fields.each do |key, value|
           io << " " << sanitize_key(key) << "=" << sanitize(value).inspect
         end

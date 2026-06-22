@@ -46,6 +46,14 @@ module Tokei::Api::Controllers
       Tokei::Api::Services::LogService.request_id
     end
 
+    private def self.request_id(env : HTTP::Server::Context) : String
+      Tokei::Api::Services::LogService.request_id(env)
+    end
+
+    private def self.log_cache_event(event : String, repo_url : String, req_id : String, analysis = nil) : Nil
+      Tokei::Api::Services::LogService.cache_event(event, repo_url, req_id, analysis)
+    end
+
     # Badge data generation (via shared service)
     private def self.generate_badge_data(badge_type : String, analysis)
       Tokei::Api::Services::BadgeService.generate(badge_type, analysis)
@@ -63,8 +71,11 @@ module Tokei::Api::Controllers
 
       # Check if we have any recent analysis results (within 24 hours)
       if recent_analysis && recent_analysis.analyzed_at.try(&.> Time.utc - 24.hours)
+        log_cache_event("analysis.cache.hit", repo_url, req_id, recent_analysis)
         return recent_analysis
       end
+
+      log_cache_event("analysis.cache.miss", repo_url, req_id, recent_analysis)
 
       # Analyze repository
       result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url, req_id)
@@ -104,7 +115,7 @@ module Tokei::Api::Controllers
     def self.setup
       # GET /api/badge/:type endpoint (for dynamic shields.io badges)
       get "/api/badge/:type" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           # Get badge type and repository URL
           badge_type = env.params.url["type"]
@@ -176,7 +187,7 @@ module Tokei::Api::Controllers
 
       # POST /api/analyses endpoint (analyze a repository)
       post "/api/analyses" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           # Get repository URL from request body
           request_body = env.request.body.try(&.gets_to_end) || ""
@@ -247,7 +258,7 @@ module Tokei::Api::Controllers
 
       # GET /api/analyses endpoint (retrieve analysis result by repository URL)
       get "/api/analyses" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           # Get repository URL from query parameter
           repo_url = env.params.query["url"]?
@@ -313,7 +324,7 @@ module Tokei::Api::Controllers
 
       # GET /api/analyses/:id endpoint (retrieve specific analysis results)
       get "/api/analyses/:id" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           id = env.params.url["id"]
 
@@ -367,7 +378,7 @@ module Tokei::Api::Controllers
 
       # GET /api/analyses/:id/languages endpoint (retrieve language statistics)
       get "/api/analyses/:id/languages" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           id = env.params.url["id"]
 
@@ -404,7 +415,7 @@ module Tokei::Api::Controllers
 
       # GET /api/analyses/:id/badges/:type endpoint (retrieve badge data)
       get "/api/analyses/:id/badges/:type" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           id = env.params.url["id"]
           badge_type = env.params.url["type"]
@@ -460,7 +471,7 @@ module Tokei::Api::Controllers
 
       # GET /api/github/:owner/:repo endpoint (analyze GitHub repository)
       get "/api/github/:owner/:repo" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
@@ -528,7 +539,7 @@ module Tokei::Api::Controllers
 
       # GET /api/github/:owner/:repo/languages endpoint (retrieve language statistics)
       get "/api/github/:owner/:repo/languages" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
@@ -573,7 +584,7 @@ module Tokei::Api::Controllers
 
       # GET /api/github/:owner/:repo/badges/:type endpoint (retrieve badge data)
       get "/api/github/:owner/:repo/badges/:type" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
@@ -627,7 +638,7 @@ module Tokei::Api::Controllers
 
       # GET /badge/github/:owner/:repo/:type endpoint (simplified badge URLs)
       get "/badge/github/:owner/:repo/:type" do |env|
-        req_id = request_id
+        req_id = request_id(env)
         begin
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]

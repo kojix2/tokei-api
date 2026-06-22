@@ -204,6 +204,8 @@ module Tokei::Api::Services
         LogService.info("repo.analysis.complete", {
           "req_id"     => request_id,
           "repo_url"   => repo,
+          "clone_ms"   => clone_elapsed_ms,
+          "tokei_ms"   => tokei_elapsed_ms,
           "elapsed_ms" => elapsed_ms(analysis_started_at),
         })
         output_string

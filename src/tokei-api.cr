@@ -2,6 +2,7 @@ require "kemal"
 require "dotenv"
 require "./config/database"
 require "./models/analysis"
+require "./services/access_log_handler"
 require "./controllers/api_controller"
 require "./controllers/web_controller"
 require "./controllers/og_controller"
@@ -34,6 +35,10 @@ module Tokei::Api
   Controllers::ApiController.setup
   Controllers::WebController.setup
   Controllers::OgController.setup
+
+  # Structured access logs with request ids shared by route logs.
+  logging false
+  use Services::AccessLogHandler.new, position: 1
 
   # Start application
   def self.start
