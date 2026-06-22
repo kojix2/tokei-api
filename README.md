@@ -57,6 +57,7 @@ Available badge types: `lines`, `language`, `languages`, `ratio`
 - [Crystal](https://crystal-lang.org/) 1.15.1 or higher
 - [tokei](https://github.com/XAMPPRocky/tokei) command
 - [Git](https://git-scm.com/)
+- `timeout` command (GNU coreutils on macOS)
 - SQLite
 
 ### Setup
@@ -97,7 +98,7 @@ Available badge types: `lines`, `language`, `languages`, `ratio`
 
 5. Start the application
    ```bash
-   crystal run src/tokei-api.cr
+   crystal run src/main.cr
    ```
 
 ## Usage
@@ -152,7 +153,7 @@ For example: http://localhost:3000/github/kojix2/tokei-api
 
 ```bash
 # Run in development mode (auto-reload)
-crystal run src/tokei-api.cr
+crystal run src/main.cr
 ```
 
 ### Database Schema
