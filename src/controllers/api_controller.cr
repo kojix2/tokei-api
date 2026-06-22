@@ -191,6 +191,11 @@ module Tokei::Api::Controllers
             raise KeyError.new("Missing required field: url")
           end
 
+          unless Tokei::Api::Services::TokeiService.valid_repo_url?(repo_url)
+            env.response.status_code = 400
+            next {error: {code: "invalid_request", message: "Invalid repository URL", status: 400}}.to_json
+          end
+
           # Get analysis
           analysis = get_analysis_for_repo(repo_url, req_id)
 
