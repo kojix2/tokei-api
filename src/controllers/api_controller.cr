@@ -3,6 +3,7 @@ require "json"
 require "../services/tokei_service"
 require "../services/language_stats_service"
 require "../services/badge_service"
+require "../services/log_service"
 require "../models/analysis"
 
 module Tokei::Api::Controllers
@@ -20,13 +21,38 @@ module Tokei::Api::Controllers
       {error: {code: "invalid_request", message: "Invalid owner or repo", status: 400}}.to_json
     end
 
+    private def self.status_for_exception(ex : Exception) : Int32
+      case ex
+      when Tokei::Api::Services::TokeiService::CloneTimeoutError,
+           Tokei::Api::Services::TokeiService::AnalysisTimeoutError
+        504
+      when Tokei::Api::Services::TokeiService::CloneFailedError,
+           Tokei::Api::Services::TokeiService::AnalysisFailedError
+        502
+      else
+        500
+      end
+    end
+
+    private def self.log_route_error(event : String, ex : Exception, fields = {} of String => String) : Nil
+      Tokei::Api::Services::LogService.error_exception(event, ex, fields)
+    end
+
+    private def self.mask_repo_url(repo_url : String) : String
+      Tokei::Api::Services::LogService.mask_url(repo_url)
+    end
+
+    private def self.request_id : String
+      Tokei::Api::Services::LogService.request_id
+    end
+
     # Badge data generation (via shared service)
     private def self.generate_badge_data(badge_type : String, analysis)
       Tokei::Api::Services::BadgeService.generate(badge_type, analysis)
     end
 
     # Get the most recent analysis for a repository URL
-    private def self.get_analysis_for_repo(repo_url : String)
+    private def self.get_analysis_for_repo(repo_url : String, req_id : String = request_id)
       # URL validation
       unless Tokei::Api::Services::TokeiService.valid_repo_url?(repo_url)
         raise "Invalid repository URL"
@@ -41,7 +67,7 @@ module Tokei::Api::Controllers
       end
 
       # Analyze repository
-      result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url)
+      result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url, req_id)
 
       # Save to database
       analysis = Tokei::Api::Models::Analysis.new(repo_url: repo_url, result: result)
@@ -52,8 +78,8 @@ module Tokei::Api::Controllers
     end
 
     # Get analysis with full result payload when language breakdown is needed.
-    private def self.get_full_analysis_for_repo(repo_url : String)
-      analysis = get_analysis_for_repo(repo_url)
+    private def self.get_full_analysis_for_repo(repo_url : String, req_id : String = request_id)
+      analysis = get_analysis_for_repo(repo_url, req_id)
 
       # Summary-only records carry an empty result payload; reload full row by id.
       unless analysis.result.as_h.empty?
@@ -66,7 +92,7 @@ module Tokei::Api::Controllers
       end
 
       # Fallback: perform analysis again if the row disappeared between queries.
-      result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url)
+      result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url, req_id)
       refreshed = Tokei::Api::Models::Analysis.new(repo_url: repo_url, result: result)
       saved = refreshed.save
       raise "Failed to persist analysis result" unless saved && refreshed.id
@@ -78,6 +104,7 @@ module Tokei::Api::Controllers
     def self.setup
       # GET /api/badge/:type endpoint (for dynamic shields.io badges)
       get "/api/badge/:type" do |env|
+        req_id = request_id
         begin
           # Get badge type and repository URL
           badge_type = env.params.url["type"]
@@ -127,8 +154,15 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
-        rescue
-          env.response.status_code = 500
+        rescue ex
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("api.badge.failed", ex, {
+            "req_id"     => req_id,
+            "route"      => "/api/badge/:type",
+            "badge_type" => badge_type,
+            "repo_url"   => mask_repo_url(repo_url.to_s),
+            "status"     => env.response.status_code.to_s,
+          })
           {
             schemaVersion: 1,
             label:         "error",
@@ -142,6 +176,7 @@ module Tokei::Api::Controllers
 
       # POST /api/analyses endpoint (analyze a repository)
       post "/api/analyses" do |env|
+        req_id = request_id
         begin
           # Get repository URL from request body
           request_body = env.request.body.try(&.gets_to_end) || ""
@@ -157,7 +192,7 @@ module Tokei::Api::Controllers
           end
 
           # Get analysis
-          analysis = get_analysis_for_repo(repo_url)
+          analysis = get_analysis_for_repo(repo_url, req_id)
 
           # Prepare response data
           response_data = {
@@ -194,14 +229,20 @@ module Tokei::Api::Controllers
           env.response.status_code = 400
           {error: {code: "invalid_request", message: "Missing required field: url", status: 400}}.to_json
         rescue ex
-          env.response.status_code = 500
-          STDERR.puts "POST /api/analyses error: #{ex.message}"
-          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("api.analysis.create.failed", ex, {
+            "req_id"   => req_id,
+            "route"    => "POST /api/analyses",
+            "repo_url" => mask_repo_url(repo_url.to_s),
+            "status"   => env.response.status_code.to_s,
+          })
+          {error: {code: "server_error", message: "Internal server error", status: env.response.status_code}}.to_json
         end
       end
 
       # GET /api/analyses endpoint (retrieve analysis result by repository URL)
       get "/api/analyses" do |env|
+        req_id = request_id
         begin
           # Get repository URL from query parameter
           repo_url = env.params.query["url"]
@@ -254,14 +295,20 @@ module Tokei::Api::Controllers
           env.response.content_type = "application/json"
           response_data.to_json
         rescue ex
-          env.response.status_code = 500
-          STDERR.puts "GET /api/analyses error: #{ex.message}"
-          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("api.analysis.lookup.failed", ex, {
+            "req_id"   => req_id,
+            "route"    => "GET /api/analyses",
+            "repo_url" => mask_repo_url(repo_url.to_s),
+            "status"   => env.response.status_code.to_s,
+          })
+          {error: {code: "server_error", message: "Internal server error", status: env.response.status_code}}.to_json
         end
       end
 
       # GET /api/analyses/:id endpoint (retrieve specific analysis results)
       get "/api/analyses/:id" do |env|
+        req_id = request_id
         begin
           id = env.params.url["id"]
 
@@ -302,14 +349,20 @@ module Tokei::Api::Controllers
           env.response.content_type = "application/json"
           response_data.to_json
         rescue ex
-          env.response.status_code = 500
-          STDERR.puts "GET /api/analyses/:id error: #{ex.message}"
-          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("api.analysis.show.failed", ex, {
+            "req_id" => req_id,
+            "route"  => "GET /api/analyses/:id",
+            "id"     => id,
+            "status" => env.response.status_code.to_s,
+          })
+          {error: {code: "server_error", message: "Internal server error", status: env.response.status_code}}.to_json
         end
       end
 
       # GET /api/analyses/:id/languages endpoint (retrieve language statistics)
       get "/api/analyses/:id/languages" do |env|
+        req_id = request_id
         begin
           id = env.params.url["id"]
 
@@ -333,14 +386,20 @@ module Tokei::Api::Controllers
           env.response.content_type = "application/json"
           response_data.to_json
         rescue ex
-          env.response.status_code = 500
-          STDERR.puts "GET /api/analyses/:id/languages error: #{ex.message}"
-          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("api.analysis.languages.failed", ex, {
+            "req_id" => req_id,
+            "route"  => "GET /api/analyses/:id/languages",
+            "id"     => id,
+            "status" => env.response.status_code.to_s,
+          })
+          {error: {code: "server_error", message: "Internal server error", status: env.response.status_code}}.to_json
         end
       end
 
       # GET /api/analyses/:id/badges/:type endpoint (retrieve badge data)
       get "/api/analyses/:id/badges/:type" do |env|
+        req_id = request_id
         begin
           id = env.params.url["id"]
           badge_type = env.params.url["type"]
@@ -374,8 +433,15 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
-        rescue
-          env.response.status_code = 500
+        rescue ex
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("api.analysis.badge.failed", ex, {
+            "req_id"     => req_id,
+            "route"      => "/api/analyses/:id/badges/:type",
+            "id"         => id,
+            "badge_type" => badge_type,
+            "status"     => env.response.status_code.to_s,
+          })
           {
             schemaVersion: 1,
             label:         "error",
@@ -389,6 +455,7 @@ module Tokei::Api::Controllers
 
       # GET /api/github/:owner/:repo endpoint (analyze GitHub repository)
       get "/api/github/:owner/:repo" do |env|
+        req_id = request_id
         begin
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
@@ -401,7 +468,7 @@ module Tokei::Api::Controllers
           repo_url = "https://github.com/#{owner}/#{repo}"
 
           # Get analysis
-          analysis = get_full_analysis_for_repo(repo_url)
+          analysis = get_full_analysis_for_repo(repo_url, req_id)
 
           languages_data = Tokei::Api::Services::LanguageStatsService.extract_basic(analysis.result)
 
@@ -441,14 +508,22 @@ module Tokei::Api::Controllers
           env.response.content_type = "application/json"
           response_data.to_json
         rescue ex
-          env.response.status_code = 500
-          STDERR.puts "GET /api/analyses/:id/badges/:type error: #{ex.message}"
-          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("api.github.show.failed", ex, {
+            "req_id"   => req_id,
+            "route"    => "GET /api/github/:owner/:repo",
+            "owner"    => owner,
+            "repo"     => repo,
+            "repo_url" => mask_repo_url("https://github.com/#{owner}/#{repo}"),
+            "status"   => env.response.status_code.to_s,
+          })
+          {error: {code: "server_error", message: "Internal server error", status: env.response.status_code}}.to_json
         end
       end
 
       # GET /api/github/:owner/:repo/languages endpoint (retrieve language statistics)
       get "/api/github/:owner/:repo/languages" do |env|
+        req_id = request_id
         begin
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
@@ -461,7 +536,7 @@ module Tokei::Api::Controllers
           repo_url = "https://github.com/#{owner}/#{repo}"
 
           # Get analysis
-          analysis = get_full_analysis_for_repo(repo_url)
+          analysis = get_full_analysis_for_repo(repo_url, req_id)
 
           languages_data = Tokei::Api::Services::LanguageStatsService.extract_with_percentage(analysis.result)
 
@@ -478,14 +553,22 @@ module Tokei::Api::Controllers
           env.response.content_type = "application/json"
           response_data.to_json
         rescue ex
-          env.response.status_code = 500
-          STDERR.puts "GET /api/github/:owner/:repo/languages error: #{ex.message}"
-          {error: {code: "server_error", message: "Internal server error", status: 500}}.to_json
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("api.github.languages.failed", ex, {
+            "req_id"   => req_id,
+            "route"    => "GET /api/github/:owner/:repo/languages",
+            "owner"    => owner,
+            "repo"     => repo,
+            "repo_url" => mask_repo_url("https://github.com/#{owner}/#{repo}"),
+            "status"   => env.response.status_code.to_s,
+          })
+          {error: {code: "server_error", message: "Internal server error", status: env.response.status_code}}.to_json
         end
       end
 
       # GET /api/github/:owner/:repo/badges/:type endpoint (retrieve badge data)
       get "/api/github/:owner/:repo/badges/:type" do |env|
+        req_id = request_id
         begin
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
@@ -499,7 +582,7 @@ module Tokei::Api::Controllers
           repo_url = "https://github.com/#{owner}/#{repo}"
 
           # Get analysis
-          analysis = get_analysis_for_repo(repo_url)
+          analysis = get_analysis_for_repo(repo_url, req_id)
 
           # Generate badge data
           begin
@@ -515,8 +598,17 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
-        rescue
-          env.response.status_code = 500
+        rescue ex
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("api.github.badge.failed", ex, {
+            "req_id"     => req_id,
+            "route"      => "/api/github/:owner/:repo/badges/:type",
+            "owner"      => owner,
+            "repo"       => repo,
+            "repo_url"   => mask_repo_url("https://github.com/#{owner}/#{repo}"),
+            "badge_type" => badge_type,
+            "status"     => env.response.status_code.to_s,
+          })
           {
             schemaVersion: 1,
             label:         "error",
@@ -530,6 +622,7 @@ module Tokei::Api::Controllers
 
       # GET /badge/github/:owner/:repo/:type endpoint (simplified badge URLs)
       get "/badge/github/:owner/:repo/:type" do |env|
+        req_id = request_id
         begin
           owner = env.params.url["owner"]
           repo = env.params.url["repo"]
@@ -543,7 +636,7 @@ module Tokei::Api::Controllers
           repo_url = "https://github.com/#{owner}/#{repo}"
 
           # Get analysis
-          analysis = get_analysis_for_repo(repo_url)
+          analysis = get_analysis_for_repo(repo_url, req_id)
 
           # Generate badge data
           begin
@@ -559,8 +652,17 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
-        rescue
-          env.response.status_code = 500
+        rescue ex
+          env.response.status_code = status_for_exception(ex)
+          log_route_error("badge.github.failed", ex, {
+            "req_id"     => req_id,
+            "route"      => "/badge/github/:owner/:repo/:type",
+            "owner"      => owner,
+            "repo"       => repo,
+            "repo_url"   => mask_repo_url("https://github.com/#{owner}/#{repo}"),
+            "badge_type" => badge_type,
+            "status"     => env.response.status_code.to_s,
+          })
           {
             schemaVersion: 1,
             label:         "error",

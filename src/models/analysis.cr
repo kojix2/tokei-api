@@ -1,6 +1,7 @@
 require "json"
 require "uuid"
 require "../config/database"
+require "../services/log_service"
 
 module Tokei::Api::Models
   # Model class representing repository analysis results
@@ -123,7 +124,10 @@ module Tokei::Api::Models
         end
         true
       rescue ex
-        puts "Error saving analysis: #{ex.message}"
+        Tokei::Api::Services::LogService.error_exception("analysis.save.failed", ex, {
+          "repo_url" => Tokei::Api::Services::LogService.mask_url(@repo_url),
+          "id"       => @id.try(&.to_s) || "",
+        })
         false
       ensure
         conn.close

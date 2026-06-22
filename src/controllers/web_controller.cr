@@ -1,5 +1,6 @@
 require "kemal"
 require "../services/tokei_service"
+require "../services/log_service"
 require "../models/analysis"
 require "../views/renderer"
 require "../views/contexts/layout_context"
@@ -11,6 +12,14 @@ module Tokei::Api::Controllers
 
     private def self.valid_github_param?(value : String) : Bool
       value.matches?(GITHUB_PATH_SAFE)
+    end
+
+    private def self.request_id : String
+      Tokei::Api::Services::LogService.request_id
+    end
+
+    private def self.log_web_error(event : String, ex : Exception, fields = {} of String => String) : Nil
+      Tokei::Api::Services::LogService.error_exception(event, ex, fields)
     end
 
     # Detect common social preview bots (Twitter, Facebook, LinkedIn, Slack, Discord, etc.)
@@ -25,7 +34,7 @@ module Tokei::Api::Controllers
     end
 
     # Process analyze request (common logic for GET and POST)
-    private def self.process_analyze_request(env, repo_url)
+    private def self.process_analyze_request(env, repo_url, req_id : String = request_id)
       # URL validation
       unless Tokei::Api::Services::TokeiService.valid_repo_url?(repo_url)
         env.response.status_code = 400
@@ -41,7 +50,7 @@ module Tokei::Api::Controllers
         analysis = recent_analysis
       else
         # Analyze repository
-        result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url)
+        result = Tokei::Api::Services::TokeiService.analyze_repo(repo_url, req_id)
 
         # Save to database
         analysis = Tokei::Api::Models::Analysis.new(repo_url: repo_url, result: result)
@@ -52,18 +61,22 @@ module Tokei::Api::Controllers
       # Redirect to results page
       env.redirect "/analyses/#{analysis.id}"
     rescue ex
-      STDERR.puts "analyze error: #{ex.message}"
+      log_web_error("web.analyze.failed", ex, {
+        "req_id"   => req_id,
+        "route"    => "/analyze",
+        "repo_url" => Tokei::Api::Services::LogService.mask_url(repo_url.to_s),
+      })
       error_message = "An internal error occurred"
       Tokei::Api::Views::Renderer.render_index(error_message)
     end
 
     # Process GitHub repository analyze request
-    private def self.process_github_analyze_request(env, owner, repo)
+    private def self.process_github_analyze_request(env, owner, repo, req_id : String = request_id)
       # Construct GitHub repository URL
       repo_url = "https://github.com/#{owner}/#{repo}"
 
       # Use the common analyze request processing
-      process_analyze_request(env, repo_url)
+      process_analyze_request(env, repo_url, req_id)
     end
 
     # Setup Web endpoints
@@ -76,23 +89,26 @@ module Tokei::Api::Controllers
 
       # GET /analyze endpoint (for badge links) - redirect to /analyses
       get "/analyze" do |env|
+        req_id = request_id
         # Get repository URL from query parameters
         repo_url = env.params.query["url"]
-        process_analyze_request(env, repo_url)
+        process_analyze_request(env, repo_url, req_id)
       end
 
       # POST /analyze endpoint (form submission) - redirect to /analyses
       post "/analyze" do |env|
+        req_id = request_id
         # Get repository URL from form
         repo_url = env.params.body["url"]
-        process_analyze_request(env, repo_url)
+        process_analyze_request(env, repo_url, req_id)
       end
 
       # POST /analyses endpoint (form submission - new API structure)
       post "/analyses" do |env|
+        req_id = request_id
         # Get repository URL from form
         repo_url = env.params.body["url"]
-        process_analyze_request(env, repo_url)
+        process_analyze_request(env, repo_url, req_id)
       end
 
       # GET /result/:id endpoint (results display page) - redirect to /analyses/:id
@@ -103,6 +119,7 @@ module Tokei::Api::Controllers
 
       # GET /analyses/:id endpoint (results display page - new API structure)
       get "/analyses/:id" do |env|
+        req_id = request_id
         begin
           id = env.params.url["id"]
 
@@ -120,7 +137,11 @@ module Tokei::Api::Controllers
           Tokei::Api::Views::Renderer.render_result(analysis, result_json)
         rescue ex
           env.response.status_code = 500
-          STDERR.puts "analyses/:id error: #{ex.message}"
+          log_web_error("web.analysis.show.failed", ex, {
+            "req_id" => req_id,
+            "route"  => "/analyses/:id",
+            "id"     => id,
+          })
           error_message = "An internal error occurred"
           Tokei::Api::Views::Renderer.render_index(error_message)
         end
@@ -143,6 +164,7 @@ module Tokei::Api::Controllers
       # - Social bots: return minimal HTML with OG tags (no redirect)
       # - Humans: run analysis then redirect to /analyses/:id
       get "/github/:owner/:repo" do |env|
+        req_id = request_id
         owner = env.params.url["owner"]
         repo = env.params.url["repo"]
 
@@ -181,10 +203,16 @@ module Tokei::Api::Controllers
 
         # Fallback for regular browsers: perform analysis and redirect
         begin
-          process_github_analyze_request(env, owner, repo)
+          process_github_analyze_request(env, owner, repo, req_id)
         rescue ex
           env.response.status_code = 500
-          STDERR.puts "github/:owner/:repo error: #{ex.message}"
+          log_web_error("web.github.show.failed", ex, {
+            "req_id"   => req_id,
+            "route"    => "/github/:owner/:repo",
+            "owner"    => owner,
+            "repo"     => repo,
+            "repo_url" => "https://github.com/#{owner}/#{repo}",
+          })
           error_message = "An internal error occurred"
           Tokei::Api::Views::Renderer.render_index(error_message)
         end
@@ -223,7 +251,10 @@ module Tokei::Api::Controllers
 
       error 500 do |env, ex|
         env.response.content_type = "text/html"
-        STDERR.puts "500 error: #{ex.message}"
+        log_web_error("web.error.500", ex, {
+          "req_id" => request_id,
+          "route"  => env.request.path,
+        })
         Tokei::Api::Views::Renderer.render_error("Internal Server Error")
       end
 

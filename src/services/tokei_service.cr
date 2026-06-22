@@ -2,10 +2,26 @@ require "json"
 require "file_utils"
 require "random"
 require "dotenv"
+require "./log_service"
 
 module Tokei::Api::Services
   # Service class for executing tokei command
   class TokeiService
+    class RepositoryError < Exception
+    end
+
+    class CloneTimeoutError < RepositoryError
+    end
+
+    class CloneFailedError < RepositoryError
+    end
+
+    class AnalysisTimeoutError < RepositoryError
+    end
+
+    class AnalysisFailedError < RepositoryError
+    end
+
     # Load environment variables (skip in test environment)
     Dotenv.load if File.exists?(".env") && ENV["CRYSTAL_ENV"]? != "test"
 
@@ -79,13 +95,15 @@ module Tokei::Api::Services
     end
 
     # Analyze repository
-    def self.analyze_repo(repo_url : String) : String
+    def self.analyze_repo(repo_url : String, request_id : String = LogService.request_id) : String
       # URL validation
-      raise "Invalid repository URL: #{repo_url}" unless valid_repo_url?(repo_url)
+      raise "Invalid repository URL" unless valid_repo_url?(repo_url)
 
       # Create temporary directory
       random_suffix = Random::Secure.hex(8)
       temp_dir = File.join(TEMP_DIR_BASE, random_suffix)
+      repo = LogService.mask_url(repo_url)
+      analysis_started_at = Time.instant
 
       begin
         # Create directory if it doesn't exist
@@ -93,25 +111,56 @@ module Tokei::Api::Services
 
         # Clone repository with timeout and single-branch options
         # Use Process.run for safety (no shell interpretation)
+        clone_started_at = Time.instant
+        LogService.info("repo.clone.start", {
+          "req_id"          => request_id,
+          "repo_url"        => repo,
+          "timeout_seconds" => CLONE_TIMEOUT.to_s,
+        })
         clone_result = Process.run(
           "timeout",
           ["#{CLONE_TIMEOUT}s", "git", "clone", "--depth", "1", "--single-branch", "--no-tags", repo_url, temp_dir],
           output: Process::Redirect::Close,
           error: Process::Redirect::Close
         )
+        clone_elapsed_ms = elapsed_ms(clone_started_at)
 
         unless clone_result.success?
           # Check if the failure was due to timeout
           if clone_result.exit_code == 124
-            raise "Repository cloning timed out after #{CLONE_TIMEOUT} seconds. The repository may be too large."
+            LogService.warn("repo.clone.timeout", {
+              "req_id"          => request_id,
+              "repo_url"        => repo,
+              "timeout_seconds" => CLONE_TIMEOUT.to_s,
+              "elapsed_ms"      => clone_elapsed_ms,
+              "exit_code"       => clone_result.exit_code.to_s,
+            })
+            raise CloneTimeoutError.new("Repository cloning timed out after #{CLONE_TIMEOUT} seconds")
           else
-            raise "Failed to clone repository: #{repo_url}. Please check the URL and try again."
+            LogService.warn("repo.clone.failed", {
+              "req_id"     => request_id,
+              "repo_url"   => repo,
+              "elapsed_ms" => clone_elapsed_ms,
+              "exit_code"  => clone_result.exit_code.to_s,
+            })
+            raise CloneFailedError.new("Failed to clone repository")
           end
         end
+        LogService.info("repo.clone.complete", {
+          "req_id"     => request_id,
+          "repo_url"   => repo,
+          "elapsed_ms" => clone_elapsed_ms,
+        })
 
         # Execute tokei command
         # Use Process.run for safety (no shell interpretation)
         output = IO::Memory.new
+        tokei_started_at = Time.instant
+        LogService.info("repo.tokei.start", {
+          "req_id"          => request_id,
+          "repo_url"        => repo,
+          "timeout_seconds" => TOKEI_TIMEOUT.to_s,
+        })
         tokei_result = Process.run(
           "timeout",
           ["#{TOKEI_TIMEOUT}s", "tokei", "--output", "json"],
@@ -119,25 +168,53 @@ module Tokei::Api::Services
           output: output,
           error: Process::Redirect::Close
         )
+        tokei_elapsed_ms = elapsed_ms(tokei_started_at)
 
         unless tokei_result.success?
           if tokei_result.exit_code == 124
-            raise "Repository analysis timed out after #{TOKEI_TIMEOUT} seconds. The repository may be too large."
+            LogService.warn("repo.tokei.timeout", {
+              "req_id"          => request_id,
+              "repo_url"        => repo,
+              "timeout_seconds" => TOKEI_TIMEOUT.to_s,
+              "elapsed_ms"      => tokei_elapsed_ms,
+              "exit_code"       => tokei_result.exit_code.to_s,
+            })
+            raise AnalysisTimeoutError.new("Repository analysis timed out after #{TOKEI_TIMEOUT} seconds")
           else
-            raise "Failed to analyze repository with tokei"
+            LogService.warn("repo.tokei.failed", {
+              "req_id"     => request_id,
+              "repo_url"   => repo,
+              "elapsed_ms" => tokei_elapsed_ms,
+              "exit_code"  => tokei_result.exit_code.to_s,
+            })
+            raise AnalysisFailedError.new("Failed to analyze repository with tokei")
           end
         end
 
         output_string = output.to_s
         if output_string.empty?
-          raise "Failed to analyze repository with tokei"
+          LogService.warn("repo.tokei.empty_output", {
+            "req_id"     => request_id,
+            "repo_url"   => repo,
+            "elapsed_ms" => tokei_elapsed_ms,
+          })
+          raise AnalysisFailedError.new("Failed to analyze repository with tokei")
         end
 
+        LogService.info("repo.analysis.complete", {
+          "req_id"     => request_id,
+          "repo_url"   => repo,
+          "elapsed_ms" => elapsed_ms(analysis_started_at),
+        })
         output_string
       ensure
         # Remove temporary directory
         FileUtils.rm_rf(temp_dir) if Dir.exists?(temp_dir)
       end
+    end
+
+    private def self.elapsed_ms(started_at : Time::Instant) : String
+      (Time.instant - started_at).total_milliseconds.round.to_i.to_s
     end
   end
 end

@@ -2,6 +2,7 @@ require "db"
 require "sqlite3"
 require "dotenv"
 require "file_utils"
+require "../services/log_service"
 
 module Tokei::Api::Config
   # Module for managing database connections
@@ -20,7 +21,9 @@ module Tokei::Api::Config
       db.exec "PRAGMA busy_timeout = 5000;"
       db
     rescue ex
-      puts "Database connection error: #{ex.message}"
+      Tokei::Api::Services::LogService.error_exception("database.connection.failed", ex, {
+        "cache_db_path" => CACHE_DB_PATH,
+      })
       raise ex
     end
 
@@ -61,7 +64,9 @@ module Tokei::Api::Config
 
         puts "Database initialization complete"
       rescue ex
-        puts "Database initialization error: #{ex.message}"
+        Tokei::Api::Services::LogService.error_exception("database.setup.failed", ex, {
+          "cache_db_path" => CACHE_DB_PATH,
+        })
         raise ex
       ensure
         conn.close
