@@ -250,7 +250,7 @@ module Tokei::Api::Controllers
         req_id = request_id
         begin
           # Get repository URL from query parameter
-          repo_url = env.params.query["url"]
+          repo_url = env.params.query["url"]?
 
           # Return error if URL is not provided
           if repo_url.nil? || repo_url.empty?

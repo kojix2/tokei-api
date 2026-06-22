@@ -91,7 +91,7 @@ module Tokei::Api::Controllers
       get "/analyze" do |env|
         req_id = request_id
         # Get repository URL from query parameters
-        repo_url = env.params.query["url"]
+        repo_url = env.params.query["url"]? || ""
         process_analyze_request(env, repo_url, req_id)
       end
 
@@ -99,7 +99,7 @@ module Tokei::Api::Controllers
       post "/analyze" do |env|
         req_id = request_id
         # Get repository URL from form
-        repo_url = env.params.body["url"]
+        repo_url = env.params.body["url"]? || ""
         process_analyze_request(env, repo_url, req_id)
       end
 
@@ -107,7 +107,7 @@ module Tokei::Api::Controllers
       post "/analyses" do |env|
         req_id = request_id
         # Get repository URL from form
-        repo_url = env.params.body["url"]
+        repo_url = env.params.body["url"]? || ""
         process_analyze_request(env, repo_url, req_id)
       end
 
