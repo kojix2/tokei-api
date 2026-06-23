@@ -117,32 +117,31 @@ module Tokei::Api::Services
           "repo_url"        => repo,
           "timeout_seconds" => CLONE_TIMEOUT.to_s,
         })
+        clone_error = IO::Memory.new
         clone_result = Process.run(
           "timeout",
           ["#{CLONE_TIMEOUT}s", "git", "clone", "--depth", "1", "--single-branch", "--no-tags", repo_url, temp_dir],
           output: Process::Redirect::Close,
-          error: Process::Redirect::Close
+          error: clone_error
         )
         clone_elapsed_ms = elapsed_ms(clone_started_at)
 
         unless clone_result.success?
+          fields = {
+            "req_id"     => request_id,
+            "repo_url"   => repo,
+            "elapsed_ms" => clone_elapsed_ms,
+            "stderr"     => LogService.mask_url(clone_error.to_s),
+          }.merge(process_status_fields(clone_result))
+
           # Check if the failure was due to timeout
-          if clone_result.exit_code == 124
-            LogService.warn("repo.clone.timeout", {
-              "req_id"          => request_id,
-              "repo_url"        => repo,
+          if timeout_status?(clone_result, clone_started_at, CLONE_TIMEOUT)
+            LogService.warn("repo.clone.timeout", fields.merge({
               "timeout_seconds" => CLONE_TIMEOUT.to_s,
-              "elapsed_ms"      => clone_elapsed_ms,
-              "exit_code"       => clone_result.exit_code.to_s,
-            })
+            }))
             raise CloneTimeoutError.new("Repository cloning timed out after #{CLONE_TIMEOUT} seconds")
           else
-            LogService.warn("repo.clone.failed", {
-              "req_id"     => request_id,
-              "repo_url"   => repo,
-              "elapsed_ms" => clone_elapsed_ms,
-              "exit_code"  => clone_result.exit_code.to_s,
-            })
+            LogService.warn("repo.clone.failed", fields)
             raise CloneFailedError.new("Failed to clone repository")
           end
         end
@@ -161,32 +160,31 @@ module Tokei::Api::Services
           "repo_url"        => repo,
           "timeout_seconds" => TOKEI_TIMEOUT.to_s,
         })
+        tokei_error = IO::Memory.new
         tokei_result = Process.run(
           "timeout",
           ["#{TOKEI_TIMEOUT}s", "tokei", "--output", "json"],
           chdir: temp_dir,
           output: output,
-          error: Process::Redirect::Close
+          error: tokei_error
         )
         tokei_elapsed_ms = elapsed_ms(tokei_started_at)
 
         unless tokei_result.success?
-          if tokei_result.exit_code == 124
-            LogService.warn("repo.tokei.timeout", {
-              "req_id"          => request_id,
-              "repo_url"        => repo,
+          fields = {
+            "req_id"     => request_id,
+            "repo_url"   => repo,
+            "elapsed_ms" => tokei_elapsed_ms,
+            "stderr"     => LogService.mask_url(tokei_error.to_s),
+          }.merge(process_status_fields(tokei_result))
+
+          if timeout_status?(tokei_result, tokei_started_at, TOKEI_TIMEOUT)
+            LogService.warn("repo.tokei.timeout", fields.merge({
               "timeout_seconds" => TOKEI_TIMEOUT.to_s,
-              "elapsed_ms"      => tokei_elapsed_ms,
-              "exit_code"       => tokei_result.exit_code.to_s,
-            })
+            }))
             raise AnalysisTimeoutError.new("Repository analysis timed out after #{TOKEI_TIMEOUT} seconds")
           else
-            LogService.warn("repo.tokei.failed", {
-              "req_id"     => request_id,
-              "repo_url"   => repo,
-              "elapsed_ms" => tokei_elapsed_ms,
-              "exit_code"  => tokei_result.exit_code.to_s,
-            })
+            LogService.warn("repo.tokei.failed", fields)
             raise AnalysisFailedError.new("Failed to analyze repository with tokei")
           end
         end
@@ -217,6 +215,25 @@ module Tokei::Api::Services
 
     private def self.elapsed_ms(started_at : Time::Instant) : String
       (Time.instant - started_at).total_milliseconds.round.to_i.to_s
+    end
+
+    private def self.timeout_status?(status : Process::Status, started_at : Time::Instant, timeout_seconds : Int32) : Bool
+      return true if status.normal_exit? && status.exit_code == 124
+
+      elapsed_seconds = (Time.instant - started_at).total_seconds
+      status.signal_exit? && elapsed_seconds >= timeout_seconds
+    end
+
+    private def self.process_status_fields(status : Process::Status) : Hash(String, String)
+      fields = {"exit_status" => status.to_s}
+
+      if status.normal_exit?
+        fields["exit_code"] = status.exit_code.to_s
+      elsif status.signal_exit?
+        fields["exit_signal"] = status.exit_signal.to_s
+      end
+
+      fields
     end
   end
 end
