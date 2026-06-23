@@ -132,21 +132,14 @@ describe Tokei::Api::Services::TokeiService do
     end
 
     it "validates generic Git URLs" do
-      # Generic HTTPS URL
-      Tokei::Api::Services::TokeiService.valid_repo_url?("https://git.example.com/user/repo.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("https://git.example.com/user/repo-name.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("https://git.example.com/user/repo/").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("https://git.example.com/user/repo-name/").should be_true
-
       # SourceHut (sr.ht) real repository
       Tokei::Api::Services::TokeiService.valid_repo_url?("https://git.sr.ht/~sircmpwn/man.sr.ht").should be_true
       Tokei::Api::Services::TokeiService.valid_repo_url?("git@git.sr.ht:~sircmpwn/man.sr.ht").should be_true
+    end
 
-      # Generic SSH URL
-      Tokei::Api::Services::TokeiService.valid_repo_url?("git@git.example.com:user/repo.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("git@git.example.com:user/repo-name.git").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("git@git.example.com:user/repo/").should be_true
-      Tokei::Api::Services::TokeiService.valid_repo_url?("git@git.example.com:user/repo-name/").should be_true
+    it "rejects generic Git URLs with unresolvable hosts" do
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://git.example.com/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@git.example.com:user/repo.git").should be_false
     end
 
     it "rejects invalid URLs" do
@@ -158,6 +151,31 @@ describe Tokei::Api::Services::TokeiService do
       # Invalid protocol
       Tokei::Api::Services::TokeiService.valid_repo_url?("http://github.com/kojix2/tokei-api.git").should be_false
       Tokei::Api::Services::TokeiService.valid_repo_url?("ftp://github.com/kojix2/tokei-api.git").should be_false
+    end
+
+    it "rejects loopback and private HTTPS hosts" do
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://localhost/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://127.0.0.1/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://10.0.0.1/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://172.16.0.1/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://192.168.0.1/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://169.254.169.254/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://100.64.0.1/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://192.0.2.1/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://198.18.0.1/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://198.51.100.1/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://203.0.113.1/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://[::1]/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://[::ffff:127.0.0.1]/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://[fc00::1]/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://[fe80::1]/user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("https://[2001:db8::1]/user/repo.git").should be_false
+    end
+
+    it "rejects loopback and private SSH hosts" do
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@localhost:user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@127.0.0.1:user/repo.git").should be_false
+      Tokei::Api::Services::TokeiService.valid_repo_url?("git@10.0.0.1:user/repo.git").should be_false
     end
   end
 end

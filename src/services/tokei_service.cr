@@ -2,6 +2,8 @@ require "json"
 require "file_utils"
 require "random"
 require "dotenv"
+require "socket"
+require "uri"
 require "./log_service"
 
 module Tokei::Api::Services
@@ -64,10 +66,12 @@ module Tokei::Api::Services
 
     # Repository URL validation
     def self.valid_repo_url?(url : String) : Bool
-      !!(url.match(GITHUB_HTTPS_VALIDATION) || url.match(GITHUB_SSH_VALIDATION) ||
+      valid_format = !!(url.match(GITHUB_HTTPS_VALIDATION) || url.match(GITHUB_SSH_VALIDATION) ||
         url.match(GITLAB_HTTPS) || url.match(GITLAB_SSH) ||
         url.match(BITBUCKET_HTTPS) || url.match(BITBUCKET_SSH) ||
         url.match(GENERIC_HTTPS) || url.match(GENERIC_SSH))
+
+      valid_format && safe_repo_host?(url)
     end
 
     # Check if the repository URL is from GitHub
@@ -215,6 +219,89 @@ module Tokei::Api::Services
 
     private def self.elapsed_ms(started_at : Time::Instant) : String
       (Time.instant - started_at).total_milliseconds.round.to_i.to_s
+    end
+
+    private def self.safe_repo_host?(url : String) : Bool
+      host = repo_host(url)
+      return false unless host
+
+      safe_host?(host)
+    end
+
+    private def self.repo_host(url : String) : String?
+      if url.starts_with?("https://")
+        URI.parse(url).host.try(&.lchop("[").rchop("]"))
+      elsif match = url.match(/^git@([^:]+):/)
+        match[1]
+      end
+    rescue
+      nil
+    end
+
+    private def self.safe_host?(host : String) : Bool
+      normalized_host = host.downcase
+      return false if normalized_host.empty? || normalized_host == "localhost" || normalized_host.ends_with?(".localhost")
+
+      addresses = Socket::Addrinfo.resolve(normalized_host, "443", type: Socket::Type::STREAM)
+      return false if addresses.empty?
+
+      addresses.all? do |addrinfo|
+        safe_ip_address?(addrinfo.ip_address.address)
+      end
+    rescue
+      false
+    end
+
+    private def self.safe_ip_address?(address : String) : Bool
+      if address.includes?(":")
+        safe_ipv6_address?(address)
+      else
+        safe_ipv4_address?(address)
+      end
+    end
+
+    private def self.safe_ipv4_address?(address : String) : Bool
+      parts = address.split(".").map(&.to_i?)
+      return false unless parts.size == 4 && parts.all?
+
+      octets = parts.compact
+      first = octets[0]
+      second = octets[1]
+
+      return false if first == 0
+      return false if first == 10
+      return false if first == 127
+      return false if first == 169 && second == 254
+      return false if first == 172 && (16..31).includes?(second)
+      return false if first == 192 && second == 0
+      return false if first == 192 && second == 168
+      return false if first == 100 && (64..127).includes?(second)
+      return false if first == 198 && (second == 18 || second == 19)
+      return false if first == 198 && second == 51 && octets[2] == 100
+      return false if first == 203 && second == 0 && octets[2] == 113
+      return false if first >= 224
+
+      true
+    end
+
+    private def self.safe_ipv6_address?(address : String) : Bool
+      normalized = address.downcase
+      if normalized.starts_with?("::ffff:")
+        return safe_ipv4_address?(normalized.lchop("::ffff:"))
+      end
+
+      return false if normalized == "::" || normalized == "::1"
+      return false if normalized.starts_with?("64:ff9b:")
+      return false if normalized.starts_with?("100:")
+      return false if normalized.starts_with?("2001:2:")
+      return false if normalized.starts_with?("2001:db8:")
+      return false if normalized.starts_with?("2002:")
+      return false if normalized.starts_with?("fc") || normalized.starts_with?("fd")
+      return false if normalized.starts_with?("fe8") || normalized.starts_with?("fe9") ||
+                      normalized.starts_with?("fea") || normalized.starts_with?("feb")
+      return false if normalized.starts_with?("ff")
+
+      true
     end
 
     private def self.timeout_status?(status : Process::Status, started_at : Time::Instant, timeout_seconds : Int32) : Bool
