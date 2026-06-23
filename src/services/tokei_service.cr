@@ -123,6 +123,7 @@ module Tokei::Api::Services
       # Create temporary directory
       random_suffix = Random::Secure.hex(8)
       temp_dir = File.join(TEMP_DIR_BASE, random_suffix)
+      archive_path = "#{temp_dir}.tar.gz"
       repo = LogService.mask_url(repo_url)
       analysis_started_at = Time.instant
 
@@ -130,8 +131,7 @@ module Tokei::Api::Services
         # Create directory if it doesn't exist
         FileUtils.mkdir_p(TEMP_DIR_BASE) unless Dir.exists?(TEMP_DIR_BASE)
 
-        # Clone repository with timeout and single-branch options.
-        clone_elapsed_ms = clone_repository(repo_url, temp_dir, request_id, repo)
+        clone_elapsed_ms = fetch_repository(repo_url, temp_dir, archive_path, request_id, repo)
 
         # Execute tokei command
         # Use Process.run for safety (no shell interpretation)
@@ -192,11 +192,20 @@ module Tokei::Api::Services
       ensure
         # Remove temporary directory
         FileUtils.rm_rf(temp_dir) if Dir.exists?(temp_dir)
+        FileUtils.rm_f(archive_path) if File.exists?(archive_path)
       end
     end
 
     private def self.elapsed_ms(started_at : Time::Instant) : String
       (Time.instant - started_at).total_milliseconds.round.to_i.to_s
+    end
+
+    private def self.fetch_repository(repo_url : String, temp_dir : String, archive_path : String, request_id : String, repo : String) : String
+      if github_repo?(repo_url)
+        fetch_github_archive(repo_url, temp_dir, archive_path, request_id, repo)
+      else
+        clone_repository(repo_url, temp_dir, request_id, repo)
+      end
     end
 
     private def self.clone_repository(repo_url : String, temp_dir : String, request_id : String, repo : String) : String
@@ -223,6 +232,60 @@ module Tokei::Api::Services
         "req_id"     => request_id,
         "repo_url"   => repo,
         "elapsed_ms" => elapsed,
+      })
+      elapsed
+    end
+
+    private def self.fetch_github_archive(repo_url : String, temp_dir : String, archive_path : String, request_id : String, repo : String) : String
+      info = extract_github_info(repo_url)
+      raise CloneFailedError.new("Failed to prepare GitHub archive URL") unless info
+
+      owner, repo_name = info
+      archive_url = "https://github.com/#{owner}/#{repo_name}/archive/HEAD.tar.gz"
+      started_at = Time.instant
+      LogService.info("repo.github_archive.start", {
+        "req_id"          => request_id,
+        "repo_url"        => repo,
+        "timeout_seconds" => CLONE_TIMEOUT.to_s,
+      })
+
+      download_error = IO::Memory.new
+      download_result = Process.run(
+        "timeout",
+        ["#{CLONE_TIMEOUT}s", "curl", "--fail", "--location", "--silent", "--show-error", "--connect-timeout", "10", "--output", archive_path, archive_url],
+        output: Process::Redirect::Close,
+        error: download_error
+      )
+      download_elapsed = elapsed_ms(started_at)
+
+      unless download_result.success?
+        handle_source_fetch_failure("repo.github_archive.download", download_result, download_error, started_at, download_elapsed, request_id, repo)
+      end
+
+      # Share a single CLONE_TIMEOUT budget across download + extract so the
+      # GitHub path never waits longer overall than the git clone path.
+      remaining_seconds = Math.max(1, (CLONE_TIMEOUT - (Time.instant - started_at).total_seconds).ceil.to_i)
+
+      FileUtils.mkdir_p(temp_dir)
+      extract_started_at = Time.instant
+      extract_error = IO::Memory.new
+      extract_result = Process.run(
+        "timeout",
+        ["#{remaining_seconds}s", "tar", "-xzf", archive_path, "--strip-components", "1", "-C", temp_dir],
+        output: Process::Redirect::Close,
+        error: extract_error
+      )
+      elapsed = elapsed_ms(started_at)
+
+      unless extract_result.success?
+        handle_source_fetch_failure("repo.github_archive.extract", extract_result, extract_error, extract_started_at, elapsed, request_id, repo, remaining_seconds)
+      end
+
+      LogService.info("repo.github_archive.complete", {
+        "req_id"      => request_id,
+        "repo_url"    => repo,
+        "elapsed_ms"  => elapsed,
+        "download_ms" => download_elapsed,
       })
       elapsed
     end

@@ -23,7 +23,7 @@ RUN crystal build --release src/main.cr -o /app/tokei-api
 # === Final Stage: Minimal runtime ===
 FROM alpine:latest
 
-RUN apk add --no-cache git sqlite-libs libgcc libgc++ pcre2 \
+RUN apk add --no-cache git curl tar sqlite-libs libgcc libgc++ pcre2 \
 	rsvg-convert fontconfig freetype ttf-dejavu
 
 WORKDIR /app
