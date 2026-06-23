@@ -64,12 +64,29 @@ module Tokei::Api::Services
     GENERIC_HTTPS = /^https:\/\/[\w.~:-]+\.[\w.~:-]+\/[\w.~:-]+\/[\w.~:-]+(?:\.git|\/)?$/
     GENERIC_SSH   = /^git@[\w.~:-]+\.[\w.~:-]+:[\w.~:-]+\/[\w.~:-]+(?:\.git|\/)?$/
 
+    BLOCKED_IPV6_PREFIXES = %w[64:ff9b: 100: 2001:2: 2001:db8: 2002: fc fd fe8 fe9 fea feb ff]
+    BLOCKED_IPV4_RANGES   = [
+      {ipv4_u32(0, 0, 0, 0), ipv4_u32(0, 255, 255, 255)},
+      {ipv4_u32(10, 0, 0, 0), ipv4_u32(10, 255, 255, 255)},
+      {ipv4_u32(100, 64, 0, 0), ipv4_u32(100, 127, 255, 255)},
+      {ipv4_u32(127, 0, 0, 0), ipv4_u32(127, 255, 255, 255)},
+      {ipv4_u32(169, 254, 0, 0), ipv4_u32(169, 254, 255, 255)},
+      {ipv4_u32(172, 16, 0, 0), ipv4_u32(172, 31, 255, 255)},
+      {ipv4_u32(192, 0, 0, 0), ipv4_u32(192, 0, 0, 255)},
+      {ipv4_u32(192, 0, 2, 0), ipv4_u32(192, 0, 2, 255)},
+      {ipv4_u32(192, 168, 0, 0), ipv4_u32(192, 168, 255, 255)},
+      {ipv4_u32(198, 18, 0, 0), ipv4_u32(198, 19, 255, 255)},
+      {ipv4_u32(198, 51, 100, 0), ipv4_u32(198, 51, 100, 255)},
+      {ipv4_u32(203, 0, 113, 0), ipv4_u32(203, 0, 113, 255)},
+      {ipv4_u32(224, 0, 0, 0), ipv4_u32(255, 255, 255, 255)},
+    ]
+
     # Repository URL validation
     def self.valid_repo_url?(url : String) : Bool
       valid_format = !!(url.match(GITHUB_HTTPS_VALIDATION) || url.match(GITHUB_SSH_VALIDATION) ||
-        url.match(GITLAB_HTTPS) || url.match(GITLAB_SSH) ||
-        url.match(BITBUCKET_HTTPS) || url.match(BITBUCKET_SSH) ||
-        url.match(GENERIC_HTTPS) || url.match(GENERIC_SSH))
+                        url.match(GITLAB_HTTPS) || url.match(GITLAB_SSH) ||
+                        url.match(BITBUCKET_HTTPS) || url.match(BITBUCKET_SSH) ||
+                        url.match(GENERIC_HTTPS) || url.match(GENERIC_SSH))
 
       valid_format && safe_repo_host?(url)
     end
@@ -113,47 +130,8 @@ module Tokei::Api::Services
         # Create directory if it doesn't exist
         FileUtils.mkdir_p(TEMP_DIR_BASE) unless Dir.exists?(TEMP_DIR_BASE)
 
-        # Clone repository with timeout and single-branch options
-        # Use Process.run for safety (no shell interpretation)
-        clone_started_at = Time.instant
-        LogService.info("repo.clone.start", {
-          "req_id"          => request_id,
-          "repo_url"        => repo,
-          "timeout_seconds" => CLONE_TIMEOUT.to_s,
-        })
-        clone_error = IO::Memory.new
-        clone_result = Process.run(
-          "timeout",
-          ["#{CLONE_TIMEOUT}s", "git", "clone", "--depth", "1", "--single-branch", "--no-tags", repo_url, temp_dir],
-          output: Process::Redirect::Close,
-          error: clone_error
-        )
-        clone_elapsed_ms = elapsed_ms(clone_started_at)
-
-        unless clone_result.success?
-          fields = {
-            "req_id"     => request_id,
-            "repo_url"   => repo,
-            "elapsed_ms" => clone_elapsed_ms,
-            "stderr"     => LogService.mask_url(clone_error.to_s),
-          }.merge(process_status_fields(clone_result))
-
-          # Check if the failure was due to timeout
-          if timeout_status?(clone_result, clone_started_at, CLONE_TIMEOUT)
-            LogService.warn("repo.clone.timeout", fields.merge({
-              "timeout_seconds" => CLONE_TIMEOUT.to_s,
-            }))
-            raise CloneTimeoutError.new("Repository cloning timed out after #{CLONE_TIMEOUT} seconds")
-          else
-            LogService.warn("repo.clone.failed", fields)
-            raise CloneFailedError.new("Failed to clone repository")
-          end
-        end
-        LogService.info("repo.clone.complete", {
-          "req_id"     => request_id,
-          "repo_url"   => repo,
-          "elapsed_ms" => clone_elapsed_ms,
-        })
+        # Clone repository with timeout and single-branch options.
+        clone_elapsed_ms = clone_repository(repo_url, temp_dir, request_id, repo)
 
         # Execute tokei command
         # Use Process.run for safety (no shell interpretation)
@@ -221,6 +199,53 @@ module Tokei::Api::Services
       (Time.instant - started_at).total_milliseconds.round.to_i.to_s
     end
 
+    private def self.clone_repository(repo_url : String, temp_dir : String, request_id : String, repo : String) : String
+      started_at = Time.instant
+      LogService.info("repo.clone.start", {
+        "req_id"          => request_id,
+        "repo_url"        => repo,
+        "timeout_seconds" => CLONE_TIMEOUT.to_s,
+      })
+      error = IO::Memory.new
+      result = Process.run(
+        "timeout",
+        ["#{CLONE_TIMEOUT}s", "git", "clone", "--depth", "1", "--single-branch", "--no-tags", repo_url, temp_dir],
+        output: Process::Redirect::Close,
+        error: error
+      )
+      elapsed = elapsed_ms(started_at)
+
+      unless result.success?
+        handle_source_fetch_failure("repo.clone", result, error, started_at, elapsed, request_id, repo)
+      end
+
+      LogService.info("repo.clone.complete", {
+        "req_id"     => request_id,
+        "repo_url"   => repo,
+        "elapsed_ms" => elapsed,
+      })
+      elapsed
+    end
+
+    private def self.handle_source_fetch_failure(event_prefix : String, status : Process::Status, error : IO::Memory, started_at : Time::Instant, elapsed : String, request_id : String, repo : String, timeout_seconds : Int32 = CLONE_TIMEOUT) : NoReturn
+      fields = {
+        "req_id"     => request_id,
+        "repo_url"   => repo,
+        "elapsed_ms" => elapsed,
+        "stderr"     => LogService.mask_url(error.to_s),
+      }.merge(process_status_fields(status))
+
+      if timeout_status?(status, started_at, timeout_seconds)
+        LogService.warn("#{event_prefix}.timeout", fields.merge({
+          "timeout_seconds" => timeout_seconds.to_s,
+        }))
+        raise CloneTimeoutError.new("Repository fetching timed out after #{CLONE_TIMEOUT} seconds")
+      else
+        LogService.warn("#{event_prefix}.failed", fields)
+        raise CloneFailedError.new("Failed to fetch repository")
+      end
+    end
+
     private def self.safe_repo_host?(url : String) : Bool
       host = repo_host(url)
       return false unless host
@@ -265,23 +290,12 @@ module Tokei::Api::Services
       return false unless parts.size == 4 && parts.all?
 
       octets = parts.compact
-      first = octets[0]
-      second = octets[1]
+      address_value = ipv4_u32(octets[0], octets[1], octets[2], octets[3])
+      BLOCKED_IPV4_RANGES.none? { |range| range[0] <= address_value <= range[1] }
+    end
 
-      return false if first == 0
-      return false if first == 10
-      return false if first == 127
-      return false if first == 169 && second == 254
-      return false if first == 172 && (16..31).includes?(second)
-      return false if first == 192 && second == 0
-      return false if first == 192 && second == 168
-      return false if first == 100 && (64..127).includes?(second)
-      return false if first == 198 && (second == 18 || second == 19)
-      return false if first == 198 && second == 51 && octets[2] == 100
-      return false if first == 203 && second == 0 && octets[2] == 113
-      return false if first >= 224
-
-      true
+    private def self.ipv4_u32(first : Int32, second : Int32, third : Int32, fourth : Int32) : UInt32
+      ((first.to_u32 << 24) | (second.to_u32 << 16) | (third.to_u32 << 8) | fourth.to_u32)
     end
 
     private def self.safe_ipv6_address?(address : String) : Bool
@@ -290,18 +304,9 @@ module Tokei::Api::Services
         return safe_ipv4_address?(normalized.lchop("::ffff:"))
       end
 
-      return false if normalized == "::" || normalized == "::1"
-      return false if normalized.starts_with?("64:ff9b:")
-      return false if normalized.starts_with?("100:")
-      return false if normalized.starts_with?("2001:2:")
-      return false if normalized.starts_with?("2001:db8:")
-      return false if normalized.starts_with?("2002:")
-      return false if normalized.starts_with?("fc") || normalized.starts_with?("fd")
-      return false if normalized.starts_with?("fe8") || normalized.starts_with?("fe9") ||
-                      normalized.starts_with?("fea") || normalized.starts_with?("feb")
-      return false if normalized.starts_with?("ff")
-
-      true
+      normalized != "::" &&
+        normalized != "::1" &&
+        BLOCKED_IPV6_PREFIXES.none? { |prefix| normalized.starts_with?(prefix) }
     end
 
     private def self.timeout_status?(status : Process::Status, started_at : Time::Instant, timeout_seconds : Int32) : Bool
