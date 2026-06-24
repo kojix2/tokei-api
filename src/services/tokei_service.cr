@@ -276,9 +276,25 @@ module Tokei::Api::Services
         error: extract_error
       )
       elapsed = elapsed_ms(started_at)
+      extract_elapsed = elapsed_ms(extract_started_at)
 
       unless extract_result.success?
-        handle_source_fetch_failure("repo.github_archive.extract", extract_result, extract_error, extract_started_at, elapsed, request_id, repo, remaining_seconds)
+        handle_source_fetch_failure(
+          "repo.github_archive.extract",
+          extract_result,
+          extract_error,
+          extract_started_at,
+          elapsed,
+          request_id,
+          repo,
+          remaining_seconds,
+          {
+            "archive_bytes"          => archive_size(archive_path),
+            "download_ms"            => download_elapsed,
+            "extract_budget_seconds" => remaining_seconds.to_s,
+            "extract_ms"             => extract_elapsed,
+          }
+        )
       end
 
       LogService.info("repo.github_archive.complete", {
@@ -290,13 +306,13 @@ module Tokei::Api::Services
       elapsed
     end
 
-    private def self.handle_source_fetch_failure(event_prefix : String, status : Process::Status, error : IO::Memory, started_at : Time::Instant, elapsed : String, request_id : String, repo : String, timeout_seconds : Int32 = CLONE_TIMEOUT) : NoReturn
+    private def self.handle_source_fetch_failure(event_prefix : String, status : Process::Status, error : IO::Memory, started_at : Time::Instant, elapsed : String, request_id : String, repo : String, timeout_seconds : Int32 = CLONE_TIMEOUT, extra_fields : Hash(String, String) = Hash(String, String).new) : NoReturn
       fields = {
         "req_id"     => request_id,
         "repo_url"   => repo,
         "elapsed_ms" => elapsed,
         "stderr"     => LogService.mask_url(error.to_s),
-      }.merge(process_status_fields(status))
+      }.merge(process_status_fields(status)).merge(extra_fields)
 
       if timeout_status?(status, started_at, timeout_seconds)
         LogService.warn("#{event_prefix}.timeout", fields.merge({
@@ -307,6 +323,10 @@ module Tokei::Api::Services
         LogService.warn("#{event_prefix}.failed", fields)
         raise CloneFailedError.new("Failed to fetch repository")
       end
+    end
+
+    private def self.archive_size(archive_path : String) : String
+      File.exists?(archive_path) ? File.size(archive_path).to_s : "0"
     end
 
     private def self.safe_repo_host?(url : String) : Bool
