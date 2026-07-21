@@ -405,7 +405,8 @@ module Tokei::Api::Services
       if status.normal_exit?
         fields["exit_code"] = status.exit_code.to_s
       elsif status.signal_exit?
-        fields["exit_signal"] = status.exit_signal.to_s
+        signal = status.exit_signal?
+        fields["exit_signal"] = signal ? signal.to_s : "unknown"
       end
 
       fields
