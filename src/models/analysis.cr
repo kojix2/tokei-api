@@ -49,6 +49,42 @@ module Tokei::Api::Models
       result_set.read(Int64?).try(&.to_i32)
     end
 
+    private def self.read_summary_record(result_set) : Analysis
+      id_value = UUID.new(result_set.read(String))
+      repo_url = result_set.read(String)
+      analyzed_at = parse_timestamp(result_set.read(String))
+
+      record = Analysis.new(repo_url, EMPTY_RESULT_JSON)
+      record.id = id_value
+      record.analyzed_at = analyzed_at
+      read_stats(result_set, record)
+      record
+    end
+
+    private def self.read_full_record(result_set) : Analysis
+      id_value = UUID.new(result_set.read(String))
+      repo_url = result_set.read(String)
+      analyzed_at = parse_timestamp(result_set.read(String))
+      result = JSON.parse(result_set.read(String))
+
+      record = Analysis.new(repo_url, result)
+      record.id = id_value
+      record.analyzed_at = analyzed_at
+      read_stats(result_set, record)
+      record
+    end
+
+    private def self.read_stats(result_set, record : Analysis) : Nil
+      record.total_lines = read_optional_i32(result_set)
+      record.total_code = read_optional_i32(result_set)
+      record.total_comments = read_optional_i32(result_set)
+      record.total_blanks = read_optional_i32(result_set)
+      record.top_language = result_set.read(String?)
+      record.top_language_lines = read_optional_i32(result_set)
+      record.language_count = read_optional_i32(result_set)
+      record.code_comment_ratio = result_set.read(Float64?)
+    end
+
     # Delete analyses older than the retention period (default: 7 days)
     # Can be configured via RETENTION_DAYS environment variable
     def self.cleanup_old_data : Int64
@@ -142,22 +178,7 @@ module Tokei::Api::Models
         analysis = nil
         conn.query("SELECT #{ANALYSIS_SUMMARY_COLUMNS} FROM analyses WHERE repo_url = ? ORDER BY analyzed_at DESC LIMIT 1", repo_url) do |result_set|
           if result_set.move_next
-            id_value = UUID.new(result_set.read(String))
-            repo_url = result_set.read(String)
-            analyzed_at = parse_timestamp(result_set.read(String))
-
-            record = Analysis.new(repo_url, EMPTY_RESULT_JSON)
-            record.id = id_value
-            record.analyzed_at = analyzed_at
-            record.total_lines = read_optional_i32(result_set)
-            record.total_code = read_optional_i32(result_set)
-            record.total_comments = read_optional_i32(result_set)
-            record.total_blanks = read_optional_i32(result_set)
-            record.top_language = result_set.read(String?)
-            record.top_language_lines = read_optional_i32(result_set)
-            record.language_count = read_optional_i32(result_set)
-            record.code_comment_ratio = result_set.read(Float64?)
-            analysis = record
+            analysis = read_summary_record(result_set)
           end
         end
         analysis
@@ -174,23 +195,7 @@ module Tokei::Api::Models
         analysis = nil
         conn.query("SELECT #{ANALYSIS_COLUMNS} FROM analyses WHERE repo_url = ? ORDER BY analyzed_at DESC LIMIT 1", repo_url) do |result_set|
           if result_set.move_next
-            id_value = UUID.new(result_set.read(String))
-            repo_url = result_set.read(String)
-            analyzed_at = parse_timestamp(result_set.read(String))
-            result = JSON.parse(result_set.read(String))
-
-            record = Analysis.new(repo_url, result)
-            record.id = id_value
-            record.analyzed_at = analyzed_at
-            record.total_lines = read_optional_i32(result_set)
-            record.total_code = read_optional_i32(result_set)
-            record.total_comments = read_optional_i32(result_set)
-            record.total_blanks = read_optional_i32(result_set)
-            record.top_language = result_set.read(String?)
-            record.top_language_lines = read_optional_i32(result_set)
-            record.language_count = read_optional_i32(result_set)
-            record.code_comment_ratio = result_set.read(Float64?)
-            analysis = record
+            analysis = read_full_record(result_set)
           end
         end
         analysis
@@ -207,22 +212,7 @@ module Tokei::Api::Models
         analysis = nil
         conn.query("SELECT #{ANALYSIS_SUMMARY_COLUMNS} FROM analyses WHERE id = ?", id) do |result_set|
           if result_set.move_next
-            id_value = UUID.new(result_set.read(String))
-            repo_url = result_set.read(String)
-            analyzed_at = parse_timestamp(result_set.read(String))
-
-            record = Analysis.new(repo_url, EMPTY_RESULT_JSON)
-            record.id = id_value
-            record.analyzed_at = analyzed_at
-            record.total_lines = read_optional_i32(result_set)
-            record.total_code = read_optional_i32(result_set)
-            record.total_comments = read_optional_i32(result_set)
-            record.total_blanks = read_optional_i32(result_set)
-            record.top_language = result_set.read(String?)
-            record.top_language_lines = read_optional_i32(result_set)
-            record.language_count = read_optional_i32(result_set)
-            record.code_comment_ratio = result_set.read(Float64?)
-            analysis = record
+            analysis = read_summary_record(result_set)
           end
         end
         analysis
@@ -238,24 +228,7 @@ module Tokei::Api::Models
         analysis = nil
         conn.query("SELECT #{ANALYSIS_COLUMNS} FROM analyses WHERE id = ?", id) do |result_set|
           if result_set.move_next
-            id_value = UUID.new(result_set.read(String))
-            repo_url = result_set.read(String)
-            analyzed_at = parse_timestamp(result_set.read(String))
-            result = JSON.parse(result_set.read(String))
-
-            analysis = Analysis.new(repo_url, result)
-            analysis.id = id_value
-            analysis.analyzed_at = analyzed_at
-
-            # Read statistics from database if available
-            analysis.total_lines = read_optional_i32(result_set)
-            analysis.total_code = read_optional_i32(result_set)
-            analysis.total_comments = read_optional_i32(result_set)
-            analysis.total_blanks = read_optional_i32(result_set)
-            analysis.top_language = result_set.read(String?)
-            analysis.top_language_lines = read_optional_i32(result_set)
-            analysis.language_count = read_optional_i32(result_set)
-            analysis.code_comment_ratio = result_set.read(Float64?)
+            analysis = read_full_record(result_set)
           end
         end
         analysis
