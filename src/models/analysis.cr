@@ -134,41 +134,6 @@ module Tokei::Api::Models
       end
     end
 
-    # Search by repository URL
-    def self.find_by_repo_url(repo_url : String) : Array(Analysis)
-      conn = Tokei::Api::Config::Database.connection
-      begin
-        analyses = [] of Analysis
-        conn.query("SELECT #{ANALYSIS_COLUMNS} FROM analyses WHERE repo_url = ? ORDER BY analyzed_at DESC", repo_url) do |result_set|
-          result_set.each do
-            id_value = UUID.new(result_set.read(String))
-            repo_url = result_set.read(String)
-            analyzed_at = parse_timestamp(result_set.read(String))
-            result = JSON.parse(result_set.read(String))
-
-            analysis = Analysis.new(repo_url, result)
-            analysis.id = id_value
-            analysis.analyzed_at = analyzed_at
-
-            # Read statistics from database if available
-            analysis.total_lines = read_optional_i32(result_set)
-            analysis.total_code = read_optional_i32(result_set)
-            analysis.total_comments = read_optional_i32(result_set)
-            analysis.total_blanks = read_optional_i32(result_set)
-            analysis.top_language = result_set.read(String?)
-            analysis.top_language_lines = read_optional_i32(result_set)
-            analysis.language_count = read_optional_i32(result_set)
-            analysis.code_comment_ratio = result_set.read(Float64?)
-
-            analyses << analysis
-          end
-        end
-        analyses
-      ensure
-        conn.close
-      end
-    end
-
     # Search latest analysis by repository URL without loading large result JSON.
     # Useful for summary/badge flows where only precomputed stats are needed.
     def self.find_latest_by_repo_url(repo_url : String) : Analysis?

@@ -11,8 +11,6 @@ require "./controllers/og_controller"
 
 # tokei-api - API for analyzing Git repository source code with tokei command
 module Tokei::Api
-  VERSION = "0.1.0"
-
   CSP_POLICY = "default-src 'self'; " +
                "base-uri 'self'; " +
                "frame-ancestors 'none'; " +
