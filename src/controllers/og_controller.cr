@@ -44,23 +44,27 @@ module Tokei::Api::Controllers
       PLACEHOLDER_JSON
     end
 
+    private def self.serve_cached_png?(env : HTTP::Server::Context, cache : String) : Bool
+      return false unless File.exists?(cache)
+
+      mtime = File.info(cache).modification_time
+      return false if (Time.utc - mtime) > CACHE_TTL.seconds
+
+      env.response.content_type = "image/png"
+      env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
+      env.response.headers["Vary"] = "Accept"
+      bytes = File.open(cache, "rb", &.getb_to_end)
+      env.response.content_length = bytes.size
+      env.response.write bytes
+      true
+    end
+
     private def self.serve_og(env : HTTP::Server::Context, cache_key : String, owner : String, repo : String, repo_url : String)
       svg_mode = wants_svg?(env)
 
       cache = File.join(cache_dir, "#{cache_key}.png")
-      unless svg_mode
-        if File.exists?(cache)
-          mtime = File.info(cache).modification_time
-          if (Time.utc - mtime) <= CACHE_TTL.seconds
-            env.response.content_type = "image/png"
-            env.response.headers["Cache-Control"] = "public, max-age=#{CACHE_TTL}"
-            env.response.headers["Vary"] = "Accept"
-            bytes = File.open(cache, "rb", &.getb_to_end)
-            env.response.content_length = bytes.size
-            env.response.write bytes
-            return ""
-          end
-        end
+      if !svg_mode && serve_cached_png?(env, cache)
+        return ""
       end
 
       json = og_data_json(repo_url)

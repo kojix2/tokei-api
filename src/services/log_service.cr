@@ -65,12 +65,12 @@ module Tokei::Api::Services
     end
 
     private def self.log(level : String, event : String, fields : Hash(String, String)) : Nil
-      STDERR.puts String.build { |io|
+      STDERR.puts(String.build do |io|
         io << Time.utc.to_rfc3339(fraction_digits: 3) << " " << level << " event=" << sanitize(event).inspect
         fields.each do |key, value|
           io << " " << sanitize_key(key) << "=" << sanitize(value).inspect
         end
-      }
+      end)
     end
 
     private def self.sanitize_key(key : String) : String
