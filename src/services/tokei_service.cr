@@ -115,6 +115,15 @@ module Tokei::Api::Services
       nil
     end
 
+    def self.normalize_repo_url(url : String) : String
+      if info = extract_github_info(url)
+        owner, repo = info
+        "https://github.com/#{owner}/#{repo}"
+      else
+        url.chomp("/")
+      end
+    end
+
     # Analyze repository
     def self.analyze_repo(repo_url : String, request_id : String = LogService.request_id) : String
       # URL validation

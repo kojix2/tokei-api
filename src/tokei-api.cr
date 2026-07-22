@@ -2,6 +2,7 @@ require "kemal"
 require "dotenv"
 require "./config/database"
 require "./models/analysis"
+require "./models/analysis_failure"
 require "./services/access_log_handler"
 require "./services/analysis_service"
 require "./controllers/api_controller"
@@ -50,6 +51,8 @@ module Tokei::Api
     # Cleanup old data on startup
     deleted_count = Models::Analysis.cleanup_old_data
     puts "Cleanup: Removed #{deleted_count} old analysis records"
+    deleted_failure_count = Models::AnalysisFailure.cleanup_old_data
+    puts "Cleanup: Removed #{deleted_failure_count} expired analysis failure records"
 
     before_all do |env|
       env.response.headers["Content-Security-Policy"] = ENV["CONTENT_SECURITY_POLICY"]? || CSP_POLICY

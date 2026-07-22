@@ -70,6 +70,20 @@ describe Tokei::Api::Services::TokeiService do
     end
   end
 
+  describe ".normalize_repo_url" do
+    it "normalizes GitHub repository URL variants" do
+      normalized = "https://github.com/kojix2/tokei-api"
+
+      Tokei::Api::Services::TokeiService.normalize_repo_url("https://github.com/kojix2/tokei-api/").should eq(normalized)
+      Tokei::Api::Services::TokeiService.normalize_repo_url("https://github.com/kojix2/tokei-api.git").should eq(normalized)
+      Tokei::Api::Services::TokeiService.normalize_repo_url("git@github.com:kojix2/tokei-api.git").should eq(normalized)
+    end
+
+    it "only strips a trailing slash for non-GitHub URLs" do
+      Tokei::Api::Services::TokeiService.normalize_repo_url("https://gitlab.com/gitlab-org/gitlab/").should eq("https://gitlab.com/gitlab-org/gitlab")
+    end
+  end
+
   describe ".valid_repo_url?" do
     it "validates GitHub HTTPS URLs" do
       # Basic GitHub HTTPS URL

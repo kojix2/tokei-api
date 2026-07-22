@@ -62,6 +62,16 @@ module Tokei::Api::Config
         conn.exec "CREATE INDEX IF NOT EXISTS idx_analyses_repo_url ON analyses (repo_url);"
         conn.exec "CREATE INDEX IF NOT EXISTS idx_analyses_analyzed_at ON analyses (analyzed_at);"
 
+        conn.exec <<-SQL
+          CREATE TABLE IF NOT EXISTS analysis_failures (
+            repo_url TEXT PRIMARY KEY,
+            failure_count INTEGER NOT NULL,
+            error_type TEXT NOT NULL,
+            last_failed_at TEXT NOT NULL,
+            retry_after TEXT NOT NULL
+          );
+          SQL
+
         puts "Database initialization complete"
       rescue ex
         Tokei::Api::Services::LogService.error_exception("database.setup.failed", ex, {

@@ -24,6 +24,8 @@ module Tokei::Api::Controllers
 
     private def self.status_for_exception(ex : Exception) : Int32
       case ex
+      when Tokei::Api::Services::AnalysisService::RetrySuppressedError
+        503
       when Tokei::Api::Services::TokeiService::CloneTimeoutError,
            Tokei::Api::Services::TokeiService::AnalysisTimeoutError
         504
@@ -103,6 +105,7 @@ module Tokei::Api::Controllers
               color:         "red",
             }.to_json
           end
+          repo_url = Tokei::Api::Services::TokeiService.normalize_repo_url(repo_url)
 
           # Search for existing analysis results (badge endpoint does not trigger analysis)
           analysis = Tokei::Api::Models::Analysis.find_latest_by_repo_url(repo_url)
@@ -243,6 +246,7 @@ module Tokei::Api::Controllers
             env.response.status_code = 400
             next {error: {code: "invalid_request", message: "Invalid repository URL", status: 400}}.to_json
           end
+          repo_url = Tokei::Api::Services::TokeiService.normalize_repo_url(repo_url)
 
           # Find latest analysis result for the repository
           analysis = Tokei::Api::Models::Analysis.find_latest_by_repo_url(repo_url)
