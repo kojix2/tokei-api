@@ -65,20 +65,7 @@ module Tokei::Api::Controllers
 
     # Get analysis with full result payload when language breakdown is needed.
     private def self.get_full_analysis_for_repo(repo_url : String, req_id : String = request_id)
-      analysis = get_analysis_for_repo(repo_url, req_id)
-
-      # Summary-only records carry an empty result payload; reload full row by id.
-      unless analysis.result.as_h.empty?
-        return analysis
-      end
-
-      id = analysis.id
-      if id && (full_analysis = Tokei::Api::Models::Analysis.find(id.to_s))
-        return full_analysis
-      end
-
-      # Fallback: perform analysis again via the shared lock if the row disappeared between queries.
-      get_analysis_for_repo(repo_url, req_id)
+      Tokei::Api::Services::AnalysisService.get_full_for_repo(repo_url, req_id)
     end
 
     # Setup API endpoints

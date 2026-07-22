@@ -61,6 +61,23 @@ module Tokei::Api::Services
       end
     end
 
+    def self.get_full_for_repo(repo_url : String, req_id : String = LogService.request_id) : Tokei::Api::Models::Analysis
+      analysis = get_for_repo(repo_url, req_id)
+
+      # Summary-only records carry an empty result payload; reload full row by id.
+      unless analysis.result.as_h.empty?
+        return analysis
+      end
+
+      id = analysis.id
+      if id && (full_analysis = Tokei::Api::Models::Analysis.find(id.to_s))
+        return full_analysis
+      end
+
+      # Fallback: perform analysis again via the shared lock if the row disappeared between queries.
+      get_for_repo(repo_url, req_id)
+    end
+
     private def self.fresh_analysis(repo_url : String, req_id : String, event : String = "analysis.cache.hit") : Tokei::Api::Models::Analysis?
       analysis = Tokei::Api::Models::Analysis.find_latest_by_repo_url(repo_url)
       return unless analysis && fresh?(analysis)
