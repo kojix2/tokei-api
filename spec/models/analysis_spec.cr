@@ -5,10 +5,12 @@ ENV["CACHE_DB_PATH"] = "/tmp/tokei-api-analysis-spec.sqlite3"
 require "../../src/config/database"
 require "../../src/models/analysis"
 
+private DB_PATH = Tokei::Api::Config::Database::CACHE_DB_PATH
+
 private DB_FILES = [
-  ENV["CACHE_DB_PATH"],
-  "#{ENV["CACHE_DB_PATH"]}-wal",
-  "#{ENV["CACHE_DB_PATH"]}-shm",
+  DB_PATH,
+  "#{DB_PATH}-wal",
+  "#{DB_PATH}-shm",
 ]
 
 private def reset_cache_db
