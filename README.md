@@ -223,6 +223,14 @@ The default cache path is `/tmp/tokei-api/tokei-api.sqlite3`. This is intentiona
 CACHE_DB_PATH=/tmp/tokei-api/tokei-api.sqlite3
 ```
 
+## Privacy
+
+This service does not use user tracking or long-term analytics.
+
+Repository URLs and analysis results may be cached temporarily for repeated requests. Cached records expire automatically and are periodically deleted.
+
+Access logs are kept minimal and used for operation and abuse prevention.
+
 ## Technology Stack
 
 - **Language:** Crystal
