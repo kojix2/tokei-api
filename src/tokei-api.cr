@@ -4,6 +4,7 @@ require "./config/database"
 require "./models/analysis"
 require "./models/analysis_failure"
 require "./services/access_log_handler"
+require "./services/security_block_handler"
 require "./services/analysis_service"
 require "./controllers/api_controller"
 require "./controllers/web_controller"
@@ -39,6 +40,7 @@ module Tokei::Api
   # Structured access logs with request ids shared by route logs.
   logging false
   use Services::AccessLogHandler.new, position: 1
+  use Services::SecurityBlockHandler.new, position: 2
 
   # Start application
   def self.start
