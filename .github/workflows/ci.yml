@@ -52,4 +52,4 @@ jobs:
           DATABASE_PROVIDER: local
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tokei-api
           CRYSTAL_ENV: test
-        run: crystal spec
+        run: crystal spec -Dgc_none

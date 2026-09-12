@@ -16,6 +16,10 @@ shards:
     git: https://github.com/crystal-loot/exception_page.git
     version: 0.5.0
 
+  gcry:
+    git: https://github.com/sdogruyol/gcry.git
+    version: 0.25.0
+
   kemal:
     git: https://github.com/kemalcr/kemal.git
     version: 1.13.0

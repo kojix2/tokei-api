@@ -1,3 +1,7 @@
+{% if flag?(:gc_none) %}
+  require "gcry"
+{% end %}
+
 require "kemal"
 require "dotenv"
 require "./config/database"
