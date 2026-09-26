@@ -18,7 +18,7 @@ shards:
 
   gcry:
     git: https://github.com/sdogruyol/gcry.git
-    version: 0.26.0
+    version: 0.28.0
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
