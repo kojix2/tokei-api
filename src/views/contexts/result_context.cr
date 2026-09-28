@@ -71,14 +71,6 @@ module Tokei::Api::Views::Contexts
       end
     end
 
-    # Get GitHub Next repo-visualization service URL
-    # This service is part of GitHub Next's Repo Visualization project
-    # which provides a visual representation of repository structure and relationships.
-    # For more information, visit: https://githubnext.com/projects/repo-visualization/
-    def github_next_visualization_url(owner : String, repo : String) : String
-      "#{ENV["GITHUB_NEXT_VISUALIZATION_URL"]? || "https://mango-dune-07a8b7110.1.azurestaticapps.net"}/?repo=#{owner}%2F#{repo}"
-    end
-
     # Get GitDiagram service URL for GitHub repositories
     def gitdiagram_url(owner : String, repo : String) : String
       "https://gitdiagram.com/#{owner}/#{repo}"

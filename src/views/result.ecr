@@ -38,9 +38,6 @@
         <% if github_repo? && (info = github_info) %>
           <% owner, repo = info %>
           <div class="mt-4">
-            <a href="<%= github_next_visualization_url(owner, repo) %>" class="btn" target="_blank" rel="noopener noreferrer">
-              Visualize
-            </a>
             <a href="<%= gitdiagram_url(owner, repo) %>" class="btn" target="_blank" rel="noopener noreferrer">
               GitDiagram
             </a>
