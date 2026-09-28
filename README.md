@@ -1,256 +1,144 @@
 # tokei-api
 
-https://tokei.kojix2.net/
+Analyze a Git repository with [tokei](https://github.com/XAMPPRocky/tokei) and view the result in a browser or retrieve it as JSON.
+
+[Web app](https://tokei.kojix2.net/) · [API documentation](https://tokei.kojix2.net/api) · [Badge documentation](https://tokei.kojix2.net/badges)
 
 [![Lines of Code](https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fkojix2%2Ftokei-api%2Flines)](https://tokei.kojix2.net/github/kojix2/tokei-api)
 [![Top Language](https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fkojix2%2Ftokei-api%2Flanguage)](https://tokei.kojix2.net/github/kojix2/tokei-api)
 [![Languages](https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fkojix2%2Ftokei-api%2Flanguages)](https://tokei.kojix2.net/github/kojix2/tokei-api)
 [![Code to Comment](https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2Fkojix2%2Ftokei-api%2Fratio)](https://tokei.kojix2.net/github/kojix2/tokei-api)
 
-tokei-api is a web application that provides an API to retrieve source code from a specified Git repository, execute the [tokei](https://github.com/XAMPPRocky/tokei) command, and return the results in JSON format. It also provides a web interface to visualize the code statistics.
+## What it provides
 
-## Features
+- A web interface with language charts, file-level statistics, and shareable result pages
+- JSON endpoints for repository summaries and per-language statistics
+- Direct GitHub URLs such as `/github/owner/repository`
+- Dynamic [Shields.io](https://shields.io/) badges
+- A SQLite cache to avoid analyzing the same repository on every request
 
-### API
+## Try it
 
-#### Core API
+Open a GitHub repository in the hosted web app:
 
-- `POST /api/analyses` - Analyzes the source code of a specified Git repository and returns the results in JSON
-
-  ```json
-  {
-    "url": "https://github.com/kojix2/tokei-api.git"
-  }
-  ```
-
-- `GET /api/analyses?url=...` - Retrieve cached analysis result by repository URL
-- `GET /api/analyses/:id` - Retrieves a specific analysis result with detailed information
-- `GET /api/analyses/:id/languages` - Retrieves language statistics for a specific analysis
-- `GET /api/analyses/:id/badges/:type` - Retrieves badge data for a specific analysis
-
-#### GitHub-specific API
-
-- `GET /api/github/:owner/:repo` - Analyzes a GitHub repository directly
-- `GET /api/github/:owner/:repo/languages` - Retrieves language statistics for a GitHub repository
-- `GET /api/github/:owner/:repo/badges/:type` - Retrieves badge data for a GitHub repository
-
-#### Badge API
-
-- `GET /badge/github/:owner/:repo/:type` - Simplified URL for retrieving badge data in shields.io compatible format
-
-Available badge types: `lines`, `language`, `languages`, `ratio`
-
-- `GET /api/badge/:type?url=...` - Retrieves badge data in shields.io compatible format for any Git repository
-
-### Web Interface
-
-- Input repository URL on the home page for analysis
-- Visualize results with graphs and tables
-- View past analysis results
-- Direct access to GitHub repositories via `/github/:owner/:repo`
-- Badge integration for READMEs
-
-## Installation
-
-### Requirements
-
-- [Crystal](https://crystal-lang.org/) 1.15.1 or higher
-- [tokei](https://github.com/XAMPPRocky/tokei) command
-- [Git](https://git-scm.com/)
-- `timeout` command (GNU coreutils on macOS)
-- SQLite
-
-### Setup
-
-1. Clone the repository
-
-   ```bash
-   git clone https://github.com/kojix2/tokei-api.git
-   cd tokei-api
-   ```
-
-2. Install dependencies
-
-   ```bash
-   shards install
-   ```
-
-3. Set environment variables
-
-   ```bash
-   cp .env.example .env
-   # Edit the .env file to set cache and other settings
-   ```
-
-   Key environment variables:
-
-   - `CACHE_DB_PATH`: SQLite cache database path
-   - `BASE_URL`: Canonical public URL used for generated absolute links, OG tags, and badge URLs. Set this in production, for example `https://tokei.kojix2.net`.
-   - `TEMP_DIR`: Directory for temporary git clones
-   - `CLONE_TIMEOUT_SECONDS`: Timeout for git clone operations (default: 30)
-   - `RETENTION_DAYS`: Number of days to retain analysis data (default: 7)
-
-4. Prepare the database
-
-   ```bash
-   # Tables will be created automatically on first application startup
-   ```
-
-5. Start the application
-   ```bash
-   crystal run src/main.cr
-   ```
-
-## Usage
-
-### API Usage Examples
-
-```bash
-# Analyze a repository
-curl -X POST -H "Content-Type: application/json" -d '{"url":"https://github.com/kojix2/tokei-api.git"}' http://localhost:3000/api/analyses
-
-# Analyze a GitHub repository directly
-curl http://localhost:3000/api/github/kojix2/tokei-api
-
-# Retrieve language statistics
-curl http://localhost:3000/api/github/kojix2/tokei-api/languages
-
-# Get badge data
-curl http://localhost:3000/badge/github/kojix2/tokei-api/lines
+```text
+https://tokei.kojix2.net/github/kojix2/tokei-api
 ```
 
-### Badge Integration
+Or use the API:
 
-You can add badges to your README to showcase your code statistics:
+```bash
+# Analyze any supported Git repository.
+curl -X POST https://tokei.kojix2.net/api/analyses \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://github.com/kojix2/tokei-api.git"}'
+
+# Analyze a GitHub repository and return its summary.
+curl https://tokei.kojix2.net/api/github/kojix2/tokei-api
+
+# Return its language breakdown.
+curl https://tokei.kojix2.net/api/github/kojix2/tokei-api/languages
+```
+
+## API
+
+### Analyses
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/analyses` | Analyze the repository in the JSON `url` field |
+| `GET` | `/api/analyses?url=...` | Retrieve the latest cached analysis for a repository URL |
+| `GET` | `/api/analyses/:id` | Retrieve an analysis by ID |
+| `GET` | `/api/analyses/:id/languages` | Retrieve its language breakdown |
+| `GET` | `/api/github/:owner/:repo` | Analyze a GitHub repository |
+| `GET` | `/api/github/:owner/:repo/languages` | Retrieve its language breakdown |
+
+### Badges
+
+| Endpoint | Purpose |
+| --- | --- |
+| `/badge/github/:owner/:repo/:type` | Analyze a GitHub repository and return Shields.io endpoint JSON |
+| `/api/badge/:type?url=...` | Return badge JSON for an already-cached repository |
+| `/api/analyses/:id/badges/:type` | Return badge JSON for an analysis ID |
+| `/api/github/:owner/:repo/badges/:type` | Return badge JSON for a GitHub repository |
+
+Badge types are `lines`, `language`, `languages`, and `ratio`.
+
+## Add a badge to a README
+
+Shields.io renders the JSON returned by tokei-api. Replace `OWNER` and `REPOSITORY` in this example:
 
 ```markdown
-[![Lines of Code](https://tokei.kojix2.net/badge/github/username/repo/lines)](https://tokei.kojix2.net/github/username/repo)
-[![Top Language](https://tokei.kojix2.net/badge/github/username/repo/language)](https://tokei.kojix2.net/github/username/repo)
-[![Languages](https://tokei.kojix2.net/badge/github/username/repo/languages)](https://tokei.kojix2.net/github/username/repo)
-[![Code to Comment](https://tokei.kojix2.net/badge/github/username/repo/ratio)](https://tokei.kojix2.net/github/username/repo)
+[![Lines of Code](https://img.shields.io/endpoint?url=https%3A%2F%2Ftokei.kojix2.net%2Fbadge%2Fgithub%2FOWNER%2FREPOSITORY%2Flines)](https://tokei.kojix2.net/github/OWNER/REPOSITORY)
 ```
 
-These badges are dynamic and will automatically reflect the latest analysis of your repository.
+Change the final `lines` segment to another badge type as needed. For a non-GitHub repository, analyze it first and use `/api/badge/:type?url=...` as the URL passed to Shields.io.
 
-### Web Interface
+## Run locally
 
-The web interface consists of several pages:
+### Docker Compose
 
-- **Home page**: Access http://localhost:3000 to enter a repository URL for analysis
-- **Results page**: View detailed analysis with graphs and statistics
-- **API page**: Documentation for the REST API endpoints
-- **Badges page**: Information on how to integrate badges into your projects
-
-For GitHub repositories, you can use the direct access URL format:
-
-```
-http://localhost:3000/github/owner/repo
-```
-
-For example: http://localhost:3000/github/kojix2/tokei-api
-
-## Development
+Docker Compose is the quickest way to run the complete application:
 
 ```bash
-# Run in development mode (auto-reload)
+cp .env.example .env
+docker compose up --build
+```
+
+Then open <http://localhost:3000>. The default SQLite cache is stored inside the container and is lost when the container is replaced.
+
+### Native development
+
+Requirements:
+
+- Crystal 1.21 or later
+- Git
+- [tokei](https://github.com/XAMPPRocky/tokei)
+- SQLite development libraries
+- A `timeout` command; on macOS, install GNU coreutils and make its `timeout` command available on `PATH`
+
+```bash
+git clone https://github.com/kojix2/tokei-api.git
+cd tokei-api
+shards install
+cp .env.example .env
 crystal run src/main.cr
 ```
 
-### Database Schema
+The database and its tables are created automatically on startup.
 
-The application uses a SQLite cache database with the following schema:
+## Configuration
 
-```sql
-CREATE TABLE analyses (
-  id TEXT PRIMARY KEY,
-  repo_url TEXT NOT NULL,
-  analyzed_at TEXT NOT NULL,
-  result TEXT NOT NULL,
-  total_lines INTEGER,
-  total_code INTEGER,
-  total_comments INTEGER,
-  total_blanks INTEGER,
-  top_language TEXT,
-  top_language_lines INTEGER,
-  language_count INTEGER,
-  code_comment_ratio FLOAT
-);
-```
+The application loads settings from the environment and from `.env` when present.
 
-## Deployment
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `3000` | HTTP port |
+| `BASE_URL` | `http://localhost:$PORT` | Canonical public URL used in links, Open Graph metadata, and badges |
+| `CACHE_DB_PATH` | `/tmp/tokei-api/tokei-api.sqlite3` | SQLite cache path |
+| `TEMP_DIR` | `/tmp/tokei-api` | Working directory for repository clones |
+| `RETENTION_DAYS` | `7` | Number of days to retain cached analyses |
+| `CLONE_TIMEOUT_SECONDS` | `30` | Git clone timeout |
+| `TOKEI_TIMEOUT_SECONDS` | `30` | Repository analysis timeout |
+| `KEMAL_ENV` | `development` | Kemal environment |
 
-### Deploying to Koyeb
+Set `BASE_URL` in production so generated links and badges use the correct public origin.
 
-1. Create a Koyeb account
-2. Create a new application
-3. Connect your GitHub repository
-4. Set environment variables. Set `BASE_URL` to the canonical public URL for the service. By default, `CACHE_DB_PATH` uses `/tmp/tokei-api/tokei-api.sqlite3`, so the SQLite cache is discarded when the instance is replaced.
-5. Run a single instance when using SQLite file storage.
-6. Execute deployment
-
-## Running with Docker
-
-### Running in a single container
+## Test
 
 ```bash
-# Build Docker image
-docker build -t tokei-api .
-
-# Run container
-docker run -p 3000:3000 --env-file .env tokei-api
+crystal spec
 ```
 
-### Running with Docker Compose (recommended)
+## Deployment notes
 
-Docker Compose starts the application with an ephemeral SQLite cache inside the container.
+- The default database path is intentionally ephemeral. Mount persistent storage and change `CACHE_DB_PATH` if analysis results must survive instance replacement.
+- Use a single application instance when SQLite is stored in a local file.
+- Repository URLs and analysis results are cached temporarily. The service does not use user tracking or long-term analytics.
+- Access logs are kept minimal and are used for operations and abuse prevention.
 
-```bash
-# Build and start containers
-docker compose up -d
-
-# Check logs
-docker compose logs -f
-
-# Stop containers
-docker compose down
-```
-
-#### Cache path
-
-The default cache path is `/tmp/tokei-api/tokei-api.sqlite3`. This is intentionally ephemeral for deployments where recomputing cached analyses is acceptable:
-
-```
-CACHE_DB_PATH=/tmp/tokei-api/tokei-api.sqlite3
-```
-
-## Privacy
-
-This service does not use user tracking or long-term analytics.
-
-Repository URLs and analysis results may be cached temporarily for repeated requests. Cached records expire automatically and are periodically deleted.
-
-Access logs are kept minimal and used for operation and abuse prevention.
-
-## Technology Stack
-
-- **Language:** Crystal
-- **Framework:** Kemal
-- **Database:** SQLite
-- **Frontend:** Bootstrap, Chart.js
-- **Other:** tokei, Git
+The included [Dockerfile](Dockerfile) builds a production image containing the application and `tokei`.
 
 ## License
 
 [MIT](LICENSE)
-
-## Contributing
-
-1. Fork it (<https://github.com/kojix2/tokei-api/fork>)
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
-
-## Author
-
-- [kojix2](https://github.com/kojix2) - creator and maintainer
