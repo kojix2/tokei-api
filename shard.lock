@@ -6,7 +6,7 @@ shards:
 
   db:
     git: https://github.com/crystal-lang/crystal-db.git
-    version: 0.14.0
+    version: 0.15.0
 
   dotenv:
     git: https://github.com/gdotdesign/cr-dotenv.git
@@ -18,7 +18,7 @@ shards:
 
   gcry:
     git: https://github.com/sdogruyol/gcry.git
-    version: 0.34.0
+    version: 0.35.0
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
@@ -30,5 +30,5 @@ shards:
 
   sqlite3:
     git: https://github.com/crystal-lang/crystal-sqlite3.git
-    version: 0.23.0
+    version: 0.24.0
 
