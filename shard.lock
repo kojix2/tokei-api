@@ -18,11 +18,11 @@ shards:
 
   gcry:
     git: https://github.com/sdogruyol/gcry.git
-    version: 0.35.0
+    version: 0.37.0
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
-    version: 1.14.0
+    version: 1.15.0
 
   radix:
     git: https://github.com/luislavena/radix.git
